@@ -154,5 +154,6 @@ func mapPackageToItem(p Package) (*sdp.Item, error) {
 		Type:            "package",
 		UniqueAttribute: "name",
 		Attributes:      attributes,
+		Context:         util.LocalContext,
 	}, nil
 }
