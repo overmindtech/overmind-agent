@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/dylanratcliffe/deviant-agent/sources"
+	"github.com/dylanratcliffe/deviant-agent/sources/dpkg"
 	"github.com/dylanratcliffe/discovery"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
@@ -74,9 +74,13 @@ Edit this once you have created your source
 		}
 
 		// ⚠️ Here is where you add your sources
-		colourNameSource := sources.ColourNameSource{}
+		sources := make([]discovery.Source, 0)
 
-		e.AddSources(&colourNameSource)
+		if dpkg.Supported() {
+			sources = append(sources, &dpkg.DpkgSource{})
+		}
+
+		e.AddSources(sources...)
 
 		err = e.Connect()
 
