@@ -1,0 +1,15 @@
+##
+# Group Database
+#
+# Note that this file is consulted directly only when the system is running
+# in single-user mode.  At other times this information is provided by
+# Open Directory.
+#
+# See the opendirectoryd(8) man page for additional information about
+# Open Directory.
+##
+wheel:*:0:root
+daemon:*:1:
+mail:*:6:_teamsserver
+_taskgated:*:13:_taskgated
+certusers:*:29:root,_jabber,_postfix,_cyrus,_calendar,_dovecot

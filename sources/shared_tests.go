@@ -26,6 +26,12 @@ type ExpectedError struct {
 type ExpectedItems struct {
 	// The expected number of items
 	NumItems int
+
+	// A list of expected attributes for the items, will be checked in order
+	// with the first set of attributes neeing to match those of the first item
+	// etc. Note that this doesn't need to have the same number of entries as
+	// there are items
+	ExpectedAttributes []map[string]interface{}
 }
 
 type SourceTest struct {
@@ -95,6 +101,10 @@ func RunSourceTests(t *testing.T, tests []SourceTest, source discovery.Source) {
 						t.Fatalf("error string did not match regex %v, raw value: %v", ee.ErrorStringRegex, ire.ErrorString)
 					}
 				}
+			} else {
+				if err != nil {
+					t.Fatal(err)
+				}
 			}
 
 			if ei := test.ExpectedItems; ei != nil {
@@ -105,9 +115,45 @@ func RunSourceTests(t *testing.T, tests []SourceTest, source discovery.Source) {
 				for _, item := range items {
 					RunItemValidationTest(t, item)
 				}
+
+				// Loop over the expected attributes and check
+				for i, expectedAttributes := range ei.ExpectedAttributes {
+					relevantItem := items[i]
+
+					for key, expectedValue := range expectedAttributes {
+						value, err := relevantItem.Attributes.Get(key)
+
+						if err != nil {
+							t.Error(err)
+						}
+
+						// Deal with comparing slices
+						if expectedStringSlice, ok := expectedValue.([]interface{}); ok {
+							if !interfaceSliceEqual(expectedStringSlice, value.([]interface{})) {
+								t.Errorf("expected attribute %v to be %v, got %v", key, expectedValue, value)
+							}
+						} else {
+							if value != expectedValue {
+								t.Errorf("expected attribute %v to be %v, got %v", key, expectedValue, value)
+							}
+						}
+					}
+				}
 			}
 		})
 	}
+}
+
+func interfaceSliceEqual(a, b []interface{}) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // RunItemValidationTest Checks an item to ensure it is a valid SDP item. This includes

@@ -1,0 +1,38 @@
+# Darwin
+/dev/disk0s2 on / (hfs, local, journaled)
+devfs on /dev (devfs, local, nobrowse)
+map -hosts on /net (autofs, nosuid, automounted, nobrowse)
+map auto_home on /home (autofs, automounted, nobrowse)
+
+# Freebsd
+/dev/ad0s1a on / (ufs, local, soft-updates)
+/dev/ad0s1d on /ghost (ufs, local, soft-updates)
+tmpfs on /run (tmpfs, rw, nosuid, nodev, seclabel, mode=755)
+
+# Linux
+sysfs on /sys type sysfs (rw,nosuid,nodev,noexec,relatime,seclabel)
+devtmpfs on /dev type devtmpfs (rw,nosuid,seclabel,size=395340k,nr_inodes=98835,mode=755)
+tmpfs on /sys/fs/cgroup type tmpfs (ro,nosuid,nodev,noexec,seclabel,mode=755)
+cgroup on /sys/fs/cgroup/systemd type cgroup (rw,nosuid,nodev,noexec,relatime,seclabel,xattr,release_agent=/usr/lib/systemd/systemd-cgroups-agent,name=systemd)
+cgroup on /sys/fs/cgroup/net_cls,net_prio type cgroup (rw,nosuid,nodev,noexec,relatime,seclabel,net_cls,net_prio)
+/dev/mapper/cl_centos8-root on / type xfs (rw,relatime,seclabel,attr2,inode64,logbufs=8,logbsize=32k,noquota)
+systemd-1 on /proc/sys/fs/binfmt_misc type autofs (rw,relatime,fd=35,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=13712)
+
+# Netbsd
+/dev/ad0s1a on / (ufs, local)
+devfs on /dev (devfs, local)
+/dev/ad0s1e on /tmp (ufs, local, soft-updates)
+tmpfs on /run (tmpfs, rw, nosuid, nodev, seclabel, mode=755)
+
+# OpenBSD
+/dev/wd0a on / type ffs (local)
+tmpfs on /run type tmpfs (rw, nosuid, nodev, seclabel, mode=755)
+
+# Solaris
+# Not currently supported
+/ on /dev/dsk/c0t0d0s0 read/write/setuid/intr/largefiles/xattr/onerror=panic/dev=2200000 on Mon Mar 18 08:48:45 2002
+/proc on /proc read/write/setuid/dev=4300000 on Mon Mar 18 08:48:44 2002
+/etc/mnttab on mnttab read/write/setuid/dev=43c0000 on Mon Mar 18 08:48:44 2002
+/tmp on swap read/write/setuid/xattr/dev=2 on Mon Mar 18 08:48:52 2002
+/export/home on /dev/dsk/c0t0d0s7 read/write/setuid/intr/largefiles/xattr/onerror=panic/dev=2200007 on Mon Mar 18
+/ghost on /dev/dsk/c0t1d0s7 read/write/setuid/intr/largefiles/xattr/onerror=panic/dev=2200007 on Mon Mar 18
