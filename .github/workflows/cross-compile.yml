@@ -215,7 +215,7 @@ jobs:
     - name: Save artifact
       uses: actions/upload-artifact@v2
       with:
-        name: redacted_cli-${{ steps.go_env.outputs.goos }}-${{ steps.go_env.outputs.goarch }}
+        name: deviant-agent-${{ steps.go_env.outputs.goos }}-${{ steps.go_env.outputs.goarch }}
         path: |
-          redacted_cli
-          redacted_cli.exe
+          deviant-agent
+          deviant-agent.exe

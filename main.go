@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import "github.com/dylanratcliffe/source-template/cmd"
+import "github.com/dylanratcliffe/deviant-agent/cmd"
 
 func main() {
 	cmd.Execute()

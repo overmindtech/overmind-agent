@@ -1,4 +1,4 @@
-module github.com/dylanratcliffe/source-template
+module github.com/dylanratcliffe/deviant-agent
 
 go 1.17
 
@@ -23,6 +23,7 @@ require (
 	github.com/kr/text v0.2.0 // indirect
 	github.com/magiconair/properties v1.8.5 // indirect
 	github.com/minio/highwayhash v1.0.2 // indirect
+	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/mapstructure v1.4.2 // indirect
 	github.com/nats-io/jwt/v2 v2.1.0 // indirect
 	github.com/nats-io/nats.go v1.13.0 // indirect

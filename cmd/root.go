@@ -9,8 +9,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/dylanratcliffe/deviant-agent/sources"
 	"github.com/dylanratcliffe/discovery"
-	"github.com/dylanratcliffe/source-template/sources"
+	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
@@ -47,7 +48,7 @@ Edit this once you have created your source
 		}
 
 		// ⚠️ Your custom configration goes here
-		yourCustomFlag := viper.GetString("your-custom-flag")
+		// yourCustomFlag := viper.GetString("your-custom-flag")
 
 		log.WithFields(log.Fields{
 			"nats-servers":     natsServers,
@@ -56,7 +57,6 @@ Edit this once you have created your source
 			"nats-jwt-file":    natsJWTFile,
 			"nats-nkey-file":   natsNKeyFile,
 			"max-parallel":     maxParallel,
-			"your-custom-flag": yourCustomFlag,
 		}).Info("Got config")
 
 		e := discovery.Engine{
@@ -139,8 +139,10 @@ func init() {
 	// will be global for your application.
 	var logLevel string
 
+	home, _ := homedir.Dir()
+
 	// General config options
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "/etc/srcman/config/source.yaml", "config file path")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", fmt.Sprintf("%v/.deviant.yaml", home), "config file path")
 	rootCmd.PersistentFlags().StringVar(&logLevel, "log", "info", "Set the log level. Valid values: panic, fatal, error, warn, info, debug, trace")
 
 	// Config required by all sources in order to connect to NATS. You shouldn't
@@ -154,7 +156,7 @@ func init() {
 
 	// ⚠️ Add your own custom config options below, the example "your-custom-flag"
 	// should be replaced with your own config or deleted
-	rootCmd.PersistentFlags().String("your-custom-flag", "someDefaultValue.conf", "Description of what your option is meant to do")
+	// rootCmd.PersistentFlags().String("your-custom-flag", "someDefaultValue.conf", "Description of what your option is meant to do")
 
 	// Bind these to viper
 	viper.BindPFlags(rootCmd.PersistentFlags())
