@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"net/http"
 	"os"
 	"os/signal"
 	"runtime"
@@ -32,7 +31,7 @@ Edit this once you have created your source
 	Run: func(cmd *cobra.Command, args []string) {
 		// Get srcman supplied config
 		natsServers := viper.GetStringSlice("nats-servers")
-		natsNamePrefix := viper.GetString("nats-name-prefix")
+		natsNamePrefix := "agent"
 		natsCAFile := viper.GetString("nats-ca-file")
 		natsJWTFile := viper.GetString("nats-jwt-file")
 		natsNKeyFile := viper.GetString("nats-nkey-file")
@@ -61,12 +60,12 @@ Edit this once you have created your source
 		}).Info("Got config")
 
 		e := discovery.Engine{
-			Name: "kubernetes-source",
+			Name: "deviant-agent",
 			NATSOptions: &discovery.NATSOptions{
 				URLs:           natsServers,
 				ConnectionName: fmt.Sprintf("%v.%v", natsNamePrefix, hostname),
 				ConnectTimeout: (10 * time.Second), // TODO: Make configurable
-				NumRetries:     999,                // We are in a container so wait forever
+				NumRetries:     5,
 				CAFile:         natsCAFile,
 				NkeyFile:       natsNKeyFile,
 				JWTFile:        natsJWTFile,
@@ -78,35 +77,6 @@ Edit this once you have created your source
 		colourNameSource := sources.ColourNameSource{}
 
 		e.AddSources(&colourNameSource)
-
-		// Start HTTP server for status
-		healthCheckPort := 8080
-		healthCheckPath := "/healthz"
-
-		http.HandleFunc(healthCheckPath, func(rw http.ResponseWriter, r *http.Request) {
-			if e.IsNATSConnected() {
-				fmt.Fprint(rw, "ok")
-			} else {
-				http.Error(rw, "NATS not connected", http.StatusInternalServerError)
-			}
-		})
-
-		log.WithFields(log.Fields{
-			"port": healthCheckPort,
-			"path": healthCheckPath,
-		}).Debug("Starting healthcheck server")
-
-		go func() {
-			log.Fatal(http.ListenAndServe(":8080", nil))
-		}()
-
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error": err,
-			}).Error("Could not start HTTP server for /healthz health checks")
-
-			os.Exit(1)
-		}
 
 		err = e.Connect()
 
