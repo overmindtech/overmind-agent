@@ -6,7 +6,6 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/dylanratcliffe/deviant-agent/sources"
 	"github.com/dylanratcliffe/deviant-agent/sources/util"
 	"github.com/dylanratcliffe/sdp-go"
 )
@@ -26,13 +25,13 @@ func TestHostsFind(t *testing.T) {
 		HostsLocation: exampleFile,
 	}
 
-	tests := []sources.SourceTest{
+	tests := []util.SourceTest{
 		{
 			Name:          "Find",
 			ItemContext:   util.LocalContext,
 			Method:        sdp.RequestMethod_FIND,
 			ExpectedError: nil,
-			ExpectedItems: &sources.ExpectedItems{
+			ExpectedItems: &util.ExpectedItems{
 				NumItems: 10,
 				ExpectedAttributes: []map[string]interface{}{
 					{
@@ -97,7 +96,7 @@ func TestHostsFind(t *testing.T) {
 		},
 	}
 
-	sources.RunSourceTests(t, tests, s)
+	util.RunSourceTests(t, tests, s)
 }
 
 func TestHostsSearch(t *testing.T) {
@@ -108,14 +107,14 @@ func TestHostsSearch(t *testing.T) {
 		HostsLocation: exampleFile,
 	}
 
-	tests := []sources.SourceTest{
+	tests := []util.SourceTest{
 		{
 			Name:          "localhost",
 			ItemContext:   util.LocalContext,
 			Query:         "localhost",
 			Method:        sdp.RequestMethod_SEARCH,
 			ExpectedError: nil,
-			ExpectedItems: &sources.ExpectedItems{
+			ExpectedItems: &util.ExpectedItems{
 				NumItems: 1,
 				ExpectedAttributes: []map[string]interface{}{
 					{
@@ -131,7 +130,7 @@ func TestHostsSearch(t *testing.T) {
 			Query:         "1.1.1.1",
 			Method:        sdp.RequestMethod_SEARCH,
 			ExpectedError: nil,
-			ExpectedItems: &sources.ExpectedItems{
+			ExpectedItems: &util.ExpectedItems{
 				NumItems: 1,
 				ExpectedAttributes: []map[string]interface{}{
 					{
@@ -144,7 +143,7 @@ func TestHostsSearch(t *testing.T) {
 		},
 	}
 
-	sources.RunSourceTests(t, tests, s)
+	util.RunSourceTests(t, tests, s)
 }
 
 func TestHostsGet(t *testing.T) {
@@ -155,14 +154,14 @@ func TestHostsGet(t *testing.T) {
 		HostsLocation: exampleFile,
 	}
 
-	tests := []sources.SourceTest{
+	tests := []util.SourceTest{
 		{
 			Name:          "localhost",
 			ItemContext:   util.LocalContext,
 			Query:         "localhost",
 			Method:        sdp.RequestMethod_GET,
 			ExpectedError: nil,
-			ExpectedItems: &sources.ExpectedItems{
+			ExpectedItems: &util.ExpectedItems{
 				NumItems: 1,
 				ExpectedAttributes: []map[string]interface{}{
 					{
@@ -178,7 +177,7 @@ func TestHostsGet(t *testing.T) {
 			Query:         "1.1.1.1",
 			Method:        sdp.RequestMethod_SEARCH,
 			ExpectedError: nil,
-			ExpectedItems: &sources.ExpectedItems{
+			ExpectedItems: &util.ExpectedItems{
 				NumItems: 1,
 				ExpectedAttributes: []map[string]interface{}{
 					{
@@ -191,5 +190,5 @@ func TestHostsGet(t *testing.T) {
 		},
 	}
 
-	sources.RunSourceTests(t, tests, s)
+	util.RunSourceTests(t, tests, s)
 }

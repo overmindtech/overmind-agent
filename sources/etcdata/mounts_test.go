@@ -8,7 +8,6 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/dylanratcliffe/deviant-agent/sources"
 	"github.com/dylanratcliffe/deviant-agent/sources/util"
 	"github.com/dylanratcliffe/sdp-go"
 )
@@ -33,7 +32,7 @@ func testMountFunc() (*bufio.Scanner, error) {
 	return bufio.NewScanner(file), nil
 }
 
-var AllMounts = sources.ExpectedItems{
+var AllMounts = util.ExpectedItems{
 	NumItems: 20,
 	ExpectedAttributes: []map[string]interface{}{
 		{
@@ -265,7 +264,7 @@ var AllMounts = sources.ExpectedItems{
 }
 
 func TestMountsFind(t *testing.T) {
-	tests := []sources.SourceTest{
+	tests := []util.SourceTest{
 		{
 			Name:          "normal find",
 			ItemContext:   util.LocalContext,
@@ -275,7 +274,7 @@ func TestMountsFind(t *testing.T) {
 		},
 	}
 
-	sources.RunSourceTests(t, tests, testMountsBackend)
+	util.RunSourceTests(t, tests, testMountsBackend)
 }
 
 func TestMountsSearch(t *testing.T) {
@@ -287,7 +286,7 @@ func TestMountsSearch(t *testing.T) {
 		}
 	}
 
-	tests := []sources.SourceTest{
+	tests := []util.SourceTest{
 		{
 			Name:          "* search",
 			ItemContext:   util.LocalContext,
@@ -302,14 +301,14 @@ func TestMountsSearch(t *testing.T) {
 			Query:         "/",
 			Method:        sdp.RequestMethod_SEARCH,
 			ExpectedError: nil,
-			ExpectedItems: &sources.ExpectedItems{
+			ExpectedItems: &util.ExpectedItems{
 				NumItems:           len(slashMounts),
 				ExpectedAttributes: slashMounts,
 			},
 		},
 	}
 
-	sources.RunSourceTests(t, tests, testMountsBackend)
+	util.RunSourceTests(t, tests, testMountsBackend)
 }
 
 func TestMountsGet(t *testing.T) {
@@ -326,17 +325,17 @@ func TestMountsGet(t *testing.T) {
 		}
 	}
 
-	tests := make([]sources.SourceTest, 0)
+	tests := make([]util.SourceTest, 0)
 
 	for _, expected := range expectedGetMounts {
 		path := fmt.Sprint(expected["path"])
-		tests = append(tests, sources.SourceTest{
+		tests = append(tests, util.SourceTest{
 			Name:          path,
 			ItemContext:   util.LocalContext,
 			Query:         path,
 			Method:        sdp.RequestMethod_GET,
 			ExpectedError: nil,
-			ExpectedItems: &sources.ExpectedItems{
+			ExpectedItems: &util.ExpectedItems{
 				NumItems: 1,
 				ExpectedAttributes: []map[string]interface{}{
 					expected,
@@ -345,5 +344,5 @@ func TestMountsGet(t *testing.T) {
 		})
 	}
 
-	sources.RunSourceTests(t, tests, testMountsBackend)
+	util.RunSourceTests(t, tests, testMountsBackend)
 }

@@ -6,7 +6,6 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/dylanratcliffe/deviant-agent/sources"
 	"github.com/dylanratcliffe/deviant-agent/sources/util"
 	"github.com/dylanratcliffe/sdp-go"
 )
@@ -29,13 +28,13 @@ func TestGroupsFind(t *testing.T) {
 		GroupsLocation: exampleFile,
 	}
 
-	tests := []sources.SourceTest{
+	tests := []util.SourceTest{
 		{
 			Name:          "running find",
 			ItemContext:   util.LocalContext,
 			Method:        sdp.RequestMethod_FIND,
 			ExpectedError: nil,
-			ExpectedItems: &sources.ExpectedItems{
+			ExpectedItems: &util.ExpectedItems{
 				NumItems: 5,
 				ExpectedAttributes: []map[string]interface{}{
 					{
@@ -80,7 +79,7 @@ func TestGroupsFind(t *testing.T) {
 		},
 	}
 
-	sources.RunSourceTests(t, tests, s)
+	util.RunSourceTests(t, tests, s)
 }
 
 func TestGroupsSearch(t *testing.T) {
@@ -91,14 +90,14 @@ func TestGroupsSearch(t *testing.T) {
 		GroupsLocation: exampleFile,
 	}
 
-	tests := []sources.SourceTest{
+	tests := []util.SourceTest{
 		{
 			Name:          "search wheel",
 			ItemContext:   util.LocalContext,
 			Query:         "wheel",
 			Method:        sdp.RequestMethod_SEARCH,
 			ExpectedError: nil,
-			ExpectedItems: &sources.ExpectedItems{
+			ExpectedItems: &util.ExpectedItems{
 				NumItems: 1,
 				ExpectedAttributes: []map[string]interface{}{
 					{
@@ -117,7 +116,7 @@ func TestGroupsSearch(t *testing.T) {
 			Query:         "1",
 			Method:        sdp.RequestMethod_SEARCH,
 			ExpectedError: nil,
-			ExpectedItems: &sources.ExpectedItems{
+			ExpectedItems: &util.ExpectedItems{
 				NumItems: 1,
 				ExpectedAttributes: []map[string]interface{}{
 					{
@@ -133,7 +132,7 @@ func TestGroupsSearch(t *testing.T) {
 			Query:         "29",
 			Method:        sdp.RequestMethod_SEARCH,
 			ExpectedError: nil,
-			ExpectedItems: &sources.ExpectedItems{
+			ExpectedItems: &util.ExpectedItems{
 				NumItems: 1,
 				ExpectedAttributes: []map[string]interface{}{
 					{
@@ -153,7 +152,7 @@ func TestGroupsSearch(t *testing.T) {
 		},
 	}
 
-	sources.RunSourceTests(t, tests, s)
+	util.RunSourceTests(t, tests, s)
 }
 
 func TestGroupsGet(t *testing.T) {
@@ -164,14 +163,14 @@ func TestGroupsGet(t *testing.T) {
 		GroupsLocation: exampleFile,
 	}
 
-	tests := []sources.SourceTest{
+	tests := []util.SourceTest{
 		{
 			Name:          "get wheel",
 			ItemContext:   util.LocalContext,
 			Query:         "wheel",
 			Method:        sdp.RequestMethod_GET,
 			ExpectedError: nil,
-			ExpectedItems: &sources.ExpectedItems{
+			ExpectedItems: &util.ExpectedItems{
 				NumItems: 1,
 				ExpectedAttributes: []map[string]interface{}{
 					{
@@ -190,7 +189,7 @@ func TestGroupsGet(t *testing.T) {
 			Query:         "daemon",
 			Method:        sdp.RequestMethod_GET,
 			ExpectedError: nil,
-			ExpectedItems: &sources.ExpectedItems{
+			ExpectedItems: &util.ExpectedItems{
 				NumItems: 1,
 				ExpectedAttributes: []map[string]interface{}{
 					{
@@ -206,7 +205,7 @@ func TestGroupsGet(t *testing.T) {
 			Query:         "mail",
 			Method:        sdp.RequestMethod_GET,
 			ExpectedError: nil,
-			ExpectedItems: &sources.ExpectedItems{
+			ExpectedItems: &util.ExpectedItems{
 				NumItems: 1,
 				ExpectedAttributes: []map[string]interface{}{
 					{
@@ -225,7 +224,7 @@ func TestGroupsGet(t *testing.T) {
 			Query:         "_taskgated",
 			Method:        sdp.RequestMethod_GET,
 			ExpectedError: nil,
-			ExpectedItems: &sources.ExpectedItems{
+			ExpectedItems: &util.ExpectedItems{
 				NumItems: 1,
 				ExpectedAttributes: []map[string]interface{}{
 					{
@@ -244,7 +243,7 @@ func TestGroupsGet(t *testing.T) {
 			Query:         "certusers",
 			Method:        sdp.RequestMethod_GET,
 			ExpectedError: nil,
-			ExpectedItems: &sources.ExpectedItems{
+			ExpectedItems: &util.ExpectedItems{
 				NumItems: 1,
 				ExpectedAttributes: []map[string]interface{}{
 					{
@@ -264,5 +263,5 @@ func TestGroupsGet(t *testing.T) {
 		},
 	}
 
-	sources.RunSourceTests(t, tests, s)
+	util.RunSourceTests(t, tests, s)
 }

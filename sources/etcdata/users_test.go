@@ -7,7 +7,6 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/dylanratcliffe/deviant-agent/sources"
 	"github.com/dylanratcliffe/deviant-agent/sources/util"
 	"github.com/dylanratcliffe/sdp-go"
 )
@@ -64,20 +63,20 @@ func TestUsersFind(t *testing.T) {
 		PasswdLocation: exampleFile,
 	}
 
-	tests := []sources.SourceTest{
+	tests := []util.SourceTest{
 		{
 			Name:          "normal find",
 			ItemContext:   util.LocalContext,
 			Method:        sdp.RequestMethod_FIND,
 			ExpectedError: nil,
-			ExpectedItems: &sources.ExpectedItems{
+			ExpectedItems: &util.ExpectedItems{
 				NumItems:           4,
 				ExpectedAttributes: ExpectedUsers,
 			},
 		},
 	}
 
-	sources.RunSourceTests(t, tests, s)
+	util.RunSourceTests(t, tests, s)
 }
 
 func TestUsersSearch(t *testing.T) {
@@ -88,14 +87,14 @@ func TestUsersSearch(t *testing.T) {
 		PasswdLocation: exampleFile,
 	}
 
-	tests := []sources.SourceTest{
+	tests := []util.SourceTest{
 		{
 			Name:          "root search",
 			ItemContext:   util.LocalContext,
 			Query:         "root",
 			Method:        sdp.RequestMethod_SEARCH,
 			ExpectedError: nil,
-			ExpectedItems: &sources.ExpectedItems{
+			ExpectedItems: &util.ExpectedItems{
 				NumItems: 1,
 				ExpectedAttributes: []map[string]interface{}{
 					{
@@ -114,7 +113,7 @@ func TestUsersSearch(t *testing.T) {
 			Query:         "1",
 			Method:        sdp.RequestMethod_SEARCH,
 			ExpectedError: nil,
-			ExpectedItems: &sources.ExpectedItems{
+			ExpectedItems: &util.ExpectedItems{
 				NumItems: 1,
 				ExpectedAttributes: []map[string]interface{}{
 					{
@@ -133,7 +132,7 @@ func TestUsersSearch(t *testing.T) {
 			Query:         "65535",
 			Method:        sdp.RequestMethod_SEARCH,
 			ExpectedError: nil,
-			ExpectedItems: &sources.ExpectedItems{
+			ExpectedItems: &util.ExpectedItems{
 				NumItems: 1,
 				ExpectedAttributes: []map[string]interface{}{
 					{
@@ -148,7 +147,7 @@ func TestUsersSearch(t *testing.T) {
 		},
 	}
 
-	sources.RunSourceTests(t, tests, s)
+	util.RunSourceTests(t, tests, s)
 }
 
 func TestUsersGet(t *testing.T) {
@@ -159,17 +158,17 @@ func TestUsersGet(t *testing.T) {
 		PasswdLocation: exampleFile,
 	}
 
-	tests := make([]sources.SourceTest, 0)
+	tests := make([]util.SourceTest, 0)
 
 	for _, expected := range ExpectedUsers {
 		name := fmt.Sprint(expected["username"])
-		tests = append(tests, sources.SourceTest{
+		tests = append(tests, util.SourceTest{
 			Name:          name,
 			ItemContext:   util.LocalContext,
 			Query:         name,
 			Method:        sdp.RequestMethod_GET,
 			ExpectedError: nil,
-			ExpectedItems: &sources.ExpectedItems{
+			ExpectedItems: &util.ExpectedItems{
 				NumItems: 1,
 				ExpectedAttributes: []map[string]interface{}{
 					expected,
@@ -178,5 +177,5 @@ func TestUsersGet(t *testing.T) {
 		})
 	}
 
-	sources.RunSourceTests(t, tests, s)
+	util.RunSourceTests(t, tests, s)
 }

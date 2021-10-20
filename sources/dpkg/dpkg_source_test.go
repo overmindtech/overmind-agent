@@ -5,7 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dylanratcliffe/deviant-agent/sources"
 	"github.com/dylanratcliffe/deviant-agent/sources/util"
 	"github.com/dylanratcliffe/sdp-go"
 )
@@ -32,14 +31,14 @@ func TestGetFind(t *testing.T) {
 		line := lines[len(lines)-1]
 
 		if line != "" {
-			tests := []sources.SourceTest{
+			tests := []util.SourceTest{
 				{
 					Name:          "Getting last package",
 					ItemContext:   util.LocalContext,
 					Query:         line,
 					Method:        sdp.RequestMethod_GET,
 					ExpectedError: nil,
-					ExpectedItems: &sources.ExpectedItems{
+					ExpectedItems: &util.ExpectedItems{
 						NumItems: 1,
 					},
 				},
@@ -48,13 +47,13 @@ func TestGetFind(t *testing.T) {
 					ItemContext:   util.LocalContext,
 					Method:        sdp.RequestMethod_FIND,
 					ExpectedError: nil,
-					ExpectedItems: &sources.ExpectedItems{
+					ExpectedItems: &util.ExpectedItems{
 						NumItems: len(lines),
 					},
 				},
 			}
 
-			sources.RunSourceTests(t, tests, &DpkgSource{})
+			util.RunSourceTests(t, tests, &DpkgSource{})
 		}
 	}
 }
@@ -68,17 +67,17 @@ func TestBackendSearch(t *testing.T) {
 		t.Skip("dpkg-query has no packages, skipping test")
 	}
 
-	tests := []sources.SourceTest{
+	tests := []util.SourceTest{
 		{
 			Name:        "bash",
 			ItemContext: util.LocalContext,
 			Query:       "/bin/bash",
 			Method:      sdp.RequestMethod_SEARCH,
-			ExpectedItems: &sources.ExpectedItems{
+			ExpectedItems: &util.ExpectedItems{
 				NumItems: 1,
 			},
 		},
 	}
 
-	sources.RunSourceTests(t, tests, &DpkgSource{})
+	util.RunSourceTests(t, tests, &DpkgSource{})
 }

@@ -1,4 +1,4 @@
-package sources
+package util
 
 import (
 	"regexp"
