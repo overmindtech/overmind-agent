@@ -190,19 +190,22 @@ func userMatchToItem(m map[string]string) *sdp.Item {
 		Context:         util.LocalContext,
 		LinkedItemRequests: []*sdp.ItemRequest{
 			{
-				Query:  m["gid"],
-				Method: sdp.RequestMethod_SEARCH,
-				Type:   "group",
+				Query:   m["gid"],
+				Method:  sdp.RequestMethod_SEARCH,
+				Type:    "group",
+				Context: util.LocalContext,
 			},
 			{
-				Query:  m["home"],
-				Method: sdp.RequestMethod_GET,
-				Type:   "file",
+				Query:   m["home"],
+				Method:  sdp.RequestMethod_GET,
+				Type:    "file",
+				Context: util.LocalContext,
 			},
 			{
-				Query:  m["shell"],
-				Method: sdp.RequestMethod_GET,
-				Type:   "file",
+				Query:   m["shell"],
+				Method:  sdp.RequestMethod_GET,
+				Type:    "file",
+				Context: util.LocalContext,
 			},
 		},
 	}

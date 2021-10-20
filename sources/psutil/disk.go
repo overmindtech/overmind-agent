@@ -130,9 +130,10 @@ func getDiskInformation(partition disk.PartitionStat) (*sdp.Item, error) {
 
 	item.LinkedItemRequests = []*sdp.ItemRequest{
 		{
-			Type:   "file",
-			Query:  partition.Mountpoint,
-			Method: sdp.RequestMethod_GET,
+			Type:    "file",
+			Query:   partition.Mountpoint,
+			Method:  sdp.RequestMethod_GET,
+			Context: util.LocalContext,
 		},
 	}
 

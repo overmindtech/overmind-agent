@@ -209,9 +209,10 @@ func mountMatchToItem(m map[string]string) *sdp.Item {
 		Context:         util.LocalContext,
 		LinkedItemRequests: []*sdp.ItemRequest{
 			{
-				Type:   "file",
-				Method: sdp.RequestMethod_GET,
-				Query:  m["path"],
+				Type:    "file",
+				Method:  sdp.RequestMethod_GET,
+				Query:   m["path"],
+				Context: util.LocalContext,
 			},
 		},
 	}

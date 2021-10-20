@@ -178,9 +178,10 @@ func groupMatchToItem(m map[string]string) *sdp.Item {
 
 	for _, member := range members {
 		linkedItemRequests = append(linkedItemRequests, &sdp.ItemRequest{
-			Type:   "user",
-			Method: sdp.RequestMethod_SEARCH,
-			Query:  member,
+			Type:    "user",
+			Method:  sdp.RequestMethod_SEARCH,
+			Query:   member,
+			Context: util.LocalContext,
 		})
 	}
 
