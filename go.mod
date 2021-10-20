@@ -47,10 +47,15 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-require github.com/elastic/go-sysinfo v1.7.1
+require (
+	github.com/coreos/go-systemd/v22 v22.3.2
+	github.com/elastic/go-sysinfo v1.7.1
+)
 
 require (
+	github.com/coreos/go-systemd v0.0.0-20191104093116-d3cd4ed1dbcf // indirect
 	github.com/elastic/go-windows v1.0.0 // indirect
+	github.com/godbus/dbus/v5 v5.0.4 // indirect
 	github.com/joeshaw/multierror v0.0.0-20140124173710-69b34d4ec901 // indirect
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/prometheus/procfs v0.0.0-20190425082905-87a4384529e0 // indirect
