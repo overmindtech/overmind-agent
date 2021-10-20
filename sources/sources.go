@@ -4,6 +4,7 @@ import (
 	"github.com/dylanratcliffe/deviant-agent/sources/dpkg"
 	"github.com/dylanratcliffe/deviant-agent/sources/etcdata"
 	"github.com/dylanratcliffe/deviant-agent/sources/network"
+	"github.com/dylanratcliffe/deviant-agent/sources/psutil"
 	"github.com/dylanratcliffe/discovery"
 )
 
@@ -14,6 +15,8 @@ var Sources []discovery.Source
 func init() {
 	Sources = append(Sources, &etcdata.HostsSource{})
 	Sources = append(Sources, &network.DNSSource{})
+	Sources = append(Sources, &psutil.DiskSource{})
+	Sources = append(Sources, &psutil.ProcessSource{})
 
 	if dpkg.Supported() {
 		Sources = append(Sources, &dpkg.DpkgSource{})

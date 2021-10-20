@@ -4,8 +4,10 @@ go 1.17
 
 // Direct dependencies
 require (
+	github.com/cakturk/go-netstat v0.0.0-20200220111822-e5b49efee7a5
 	github.com/dylanratcliffe/discovery v0.1.5
 	github.com/dylanratcliffe/sdp-go v0.1.0
+	github.com/shirou/gopsutil v3.21.9+incompatible
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
@@ -14,8 +16,10 @@ require (
 
 // Transitive dependencies
 require (
+	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/dylanratcliffe/sdpcache v0.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
+	github.com/go-ole/go-ole v1.2.5 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
@@ -43,4 +47,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-require github.com/cakturk/go-netstat v0.0.0-20200220111822-e5b49efee7a5
+require (
+	github.com/tklauser/go-sysconf v0.3.9 // indirect
+	github.com/tklauser/numcpus v0.3.0 // indirect
+)

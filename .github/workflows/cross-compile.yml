@@ -93,8 +93,8 @@ jobs:
         run: go test ./...
 
 
-  cross-compile:
-    name: Cross-Compile
+  build:
+    name: Build
     runs-on: ubuntu-latest
     if: github.event_name == 'push' # Only build on pushes to main, not PRs
     needs:
