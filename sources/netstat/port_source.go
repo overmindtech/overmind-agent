@@ -170,9 +170,10 @@ func socketToItem(s ns.SockTabEntry) (*sdp.Item, error) {
 		attributes["pid"] = s.Process.Pid
 
 		item.LinkedItemRequests = append(item.LinkedItemRequests, &sdp.ItemRequest{
-			Method: sdp.RequestMethod_GET,
-			Query:  strconv.Itoa(s.Process.Pid),
-			Type:   "process",
+			Method:  sdp.RequestMethod_GET,
+			Query:   strconv.Itoa(s.Process.Pid),
+			Type:    "process",
+			Context: util.LocalContext,
 		})
 	}
 
