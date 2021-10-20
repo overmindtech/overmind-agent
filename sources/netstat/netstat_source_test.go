@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dylanratcliffe/deviant-agent/sources"
 	"github.com/dylanratcliffe/deviant-agent/sources/util"
 	"github.com/dylanratcliffe/sdp-go"
 )
