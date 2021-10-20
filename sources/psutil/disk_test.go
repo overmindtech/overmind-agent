@@ -64,7 +64,7 @@ func TestDiskFind(t *testing.T) {
 	var diskPartitions []disk.PartitionStat
 	var diskPath string
 
-	diskPartitions, err = disk.Partitions(true)
+	diskPartitions, err = disk.Partitions(false)
 
 	if err != nil {
 		t.Errorf("Error during test prep: %v", err)
