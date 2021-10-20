@@ -17,7 +17,70 @@ All configuration options can be provided via the command line or as environment
 | `NATS_NKEY_FILE`| `--nats-nkey-file` | ✅ | Path to the file containing the NKey seed |
 | `MAX-PARALLEL`| `--max-parallel` | ✅ | Max number of requests to run in parallel |
 | `YOUR_CUSTOM_FLAG`| `--your-custom-flag` |   | Configuration that you add should be documented here |
-## Development
+
+Config can also be provided as a config f
+
+## Developing
+
+## Creating New Commands
+
+This project uses the [Cobra](https://github.com/spf13/cobra/blob/master/cobra/README.md) framework as a CLI. New commands can be created by running things like this:
+
+```shell
+cobra add serve
+cobra add config
+cobra add create -p 'configCmd'
+```
+
+### Running with NATS
+
+#### Docker Compose
+
+This method only incudes the bare minimum for NATS to work, just NATS itself. useful for integration testing when the larger kubernetes cluster is not required.
+
+Start the required services in the foreground and stop when cancelled:
+
+```
+docker compose up && docker compose down
+```
+
+Or start the service in the background:
+
+```
+docker compose up -d
+```
+
+Run the Agent:
+
+```
+go run main.go
+```
+
+### Local Debugging
+
+This will compile and run the code on your local laptop and can be run using the "local discover" debugging routine. This is likely not to be super helpful as it will only discover local resources. Note that in order for debugging to work you will need to add a host entry that resolves `nats.debug` to a URL that runs a NATS server
+
+### Remote Debugging
+
+Vagrant is used for remote debugging against VMs. Firstly install the [Remote - SSH](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh) plugin. Then ssh to either the "centos" or "ubuntu" vms. This will install VSCode on the servers and allow you to run debugging locally on them.
+
+TODO: Make the process of configuring SSH easier
+
+### Updating Go Dependencies
+
+```shell
+go get -v -u -t && go mod tidy && go mod vendor
+```
+
+### TODOS
+
+This project uses the following tags for TODOs:
+
+* **`PANIC`**: Places in the code that could in theory cause an unrecovered panic that probably should be handled better
+* **`PERF`**: Opportunities for performance gains
+* **`TODO`**: This is for general things that should be fixed that don't fit into the other categories
+
+The Todo Tree plugin is recommended (in `.vscode/extensions.json`) for managing these.
 
 ### Running Locally
 
@@ -34,7 +97,3 @@ Tests in this package can be run using:
 ```shell
 go test ./...
 ```
-
-### Packaging
-
-Docker images can be created manually using `docker build`, but GitHub actions also exist that are able to create, tag and push images. Images will be build for the `main` branch, and also for any commits tagged with a version such as `v1.2.0`
