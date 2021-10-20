@@ -6,6 +6,7 @@ import (
 	"github.com/dylanratcliffe/deviant-agent/sources/network"
 	"github.com/dylanratcliffe/deviant-agent/sources/psutil"
 	"github.com/dylanratcliffe/deviant-agent/sources/rpm"
+	"github.com/dylanratcliffe/deviant-agent/sources/system"
 	"github.com/dylanratcliffe/discovery"
 )
 
@@ -18,6 +19,7 @@ func init() {
 	Sources = append(Sources, &network.DNSSource{})
 	Sources = append(Sources, &psutil.DiskSource{})
 	Sources = append(Sources, &psutil.ProcessSource{})
+	Sources = append(Sources, &system.SystemSource{})
 
 	dpkgSource := dpkg.DpkgSource{}
 
