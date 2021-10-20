@@ -5,6 +5,7 @@ import (
 	"github.com/dylanratcliffe/deviant-agent/sources/etcdata"
 	"github.com/dylanratcliffe/deviant-agent/sources/network"
 	"github.com/dylanratcliffe/deviant-agent/sources/psutil"
+	"github.com/dylanratcliffe/deviant-agent/sources/rpm"
 	"github.com/dylanratcliffe/discovery"
 )
 
@@ -18,8 +19,16 @@ func init() {
 	Sources = append(Sources, &psutil.DiskSource{})
 	Sources = append(Sources, &psutil.ProcessSource{})
 
-	if dpkg.Supported() {
-		Sources = append(Sources, &dpkg.DpkgSource{})
+	dpkgSource := dpkg.DpkgSource{}
+
+	if dpkgSource.Supported() {
+		Sources = append(Sources, &dpkgSource)
+	}
+
+	rpmSource := rpm.RPMSource{}
+
+	if rpmSource.Supported() {
+		Sources = append(Sources, &rpmSource)
 	}
 
 	groupsSource := etcdata.GroupsSource{}

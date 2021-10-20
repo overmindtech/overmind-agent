@@ -1,4 +1,4 @@
-package dpkg
+package rpm
 
 import (
 	"fmt"
@@ -7,26 +7,27 @@ import (
 	"github.com/dylanratcliffe/sdp-go"
 )
 
-// DpkgSource struct on which all methods are registered
-type DpkgSource struct{}
+// RPMSource struct on which all methods are registered
+type RPMSource struct{}
 
 // Type is the type of items that this returns (Required)
-func (s *DpkgSource) Type() string {
+func (bc *RPMSource) Type() string {
 	return "package"
 }
 
-// Descriptive name for the source, used in logging and metadata
-func (s *DpkgSource) Name() string {
-	return "dpkg"
+// Name Returns the name of the backend package. This is used for
+// debugging and logging (Required)
+func (bc *RPMSource) Name() string {
+	return "rpm"
 }
 
 // Weighting of duplicate sources
-func (s *DpkgSource) Weight() int {
+func (s *RPMSource) Weight() int {
 	return 100
 }
 
 // List of contexts that this source is capable of find items for
-func (s *DpkgSource) Contexts() []string {
+func (s *RPMSource) Contexts() []string {
 	return []string{
 		util.LocalContext,
 	}
@@ -37,7 +38,7 @@ func (s *DpkgSource) Contexts() []string {
 // must return an item whose UniqueAttribute value exactly matches the supplied
 // parameter. If the item cannot be found it should return an ItemNotFoundError
 // (Required)
-func (s *DpkgSource) Get(itemContext string, query string) (*sdp.Item, error) {
+func (bc *RPMSource) Get(itemContext string, query string) (*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
@@ -49,12 +50,13 @@ func (s *DpkgSource) Get(itemContext string, query string) (*sdp.Item, error) {
 	var p Package
 	var err error
 
-	p, err = Show(query)
+	p, err = Query(query)
 
 	if e, ok := err.(NotFoundError); ok {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOTFOUND,
 			ErrorString: e.Error(),
+			Context:     itemContext,
 		}
 	}
 
@@ -67,7 +69,7 @@ func (s *DpkgSource) Get(itemContext string, query string) (*sdp.Item, error) {
 
 // Find Gets information about all item that the source can possibly find. If
 // nothing is found then just return an empty list (Required)
-func (s *DpkgSource) Find(itemContext string) ([]*sdp.Item, error) {
+func (bc *RPMSource) Find(itemContext string) ([]*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
@@ -81,10 +83,14 @@ func (s *DpkgSource) Find(itemContext string) ([]*sdp.Item, error) {
 	var item *sdp.Item
 	var items []*sdp.Item
 
-	ps, err = ShowAll()
+	ps, err = QueryAll()
 
 	if err != nil {
-		return nil, err
+		return nil, &sdp.ItemRequestError{
+			ErrorType:   sdp.ItemRequestError_OTHER,
+			ErrorString: err.Error(),
+			Context:     itemContext,
+		}
 	}
 
 	for _, p := range ps {
@@ -100,7 +106,7 @@ func (s *DpkgSource) Find(itemContext string) ([]*sdp.Item, error) {
 
 // Search takes a file name or binary name and runs this through rpm -q
 // --whatprovides
-func (s *DpkgSource) Search(itemContext string, query string) ([]*sdp.Item, error) {
+func (bc *RPMSource) Search(itemContext string, query string) ([]*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
@@ -114,10 +120,14 @@ func (s *DpkgSource) Search(itemContext string, query string) ([]*sdp.Item, erro
 	var item *sdp.Item
 	var items []*sdp.Item
 
-	ps, err = Search(query)
+	ps, err = WhatProvides(query)
 
 	if err != nil {
-		return nil, err
+		return nil, &sdp.ItemRequestError{
+			ErrorType:   sdp.ItemRequestError_OTHER,
+			ErrorString: err.Error(),
+			Context:     itemContext,
+		}
 	}
 
 	for _, p := range ps {
@@ -131,21 +141,27 @@ func (s *DpkgSource) Search(itemContext string, query string) ([]*sdp.Item, erro
 	return items, nil
 }
 
-func (s *DpkgSource) Supported() bool {
+// Supported A function that can be executed to see if the backend is supported
+// in the current environment, if it returns false the backend simply won't be
+// loaded (Optional)
+func (bc *RPMSource) Supported() bool {
 	return Supported()
 }
 
 func mapPackageToItem(p Package) (*sdp.Item, error) {
 	attributes, err := sdp.ToAttributes(map[string]interface{}{
 		"name":         p.Name,
-		"status":       p.Status,
-		"priority":     p.Priority,
-		"section":      p.Section,
-		"size":         p.InstalledSize,
-		"maintainer":   p.Maintainer,
-		"architecture": p.Architecture,
+		"epoch":        p.Epoch,
 		"version":      p.Version,
-		"url":          p.Homepage,
+		"release":      p.Release,
+		"architecture": p.Arch,
+		"installtime":  p.InstallTime,
+		"group":        p.Group,
+		"size":         p.Size,
+		"license":      p.License,
+		"sourcerpm":    p.SourceRPM,
+		"vendor":       p.Vendor,
+		"url":          p.URL,
 		"summary":      p.Summary,
 		"description":  p.Description,
 	})
