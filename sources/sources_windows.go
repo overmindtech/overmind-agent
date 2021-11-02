@@ -1,6 +1,6 @@
 package sources
 
-import "github.com/dylanratcliffe/deviant-agent/sources/netstat"
+import "github.com/overmindtech/overmind-agent/sources/netstat"
 
 func init() {
 	netstatSource := netstat.PortSource{}

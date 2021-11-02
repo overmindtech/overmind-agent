@@ -1,9 +1,9 @@
 package sources
 
 import (
-	"github.com/dylanratcliffe/deviant-agent/sources/netstat"
-	"github.com/dylanratcliffe/deviant-agent/sources/systemd"
-	"github.com/dylanratcliffe/deviant-agent/sources/unix"
+	"github.com/overmindtech/overmind-agent/sources/netstat"
+	"github.com/overmindtech/overmind-agent/sources/systemd"
+	"github.com/overmindtech/overmind-agent/sources/unix"
 )
 
 func init() {

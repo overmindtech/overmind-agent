@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/dylanratcliffe/deviant-agent/sources/util"
-	"github.com/dylanratcliffe/sdp-go"
+	"github.com/overmindtech/overmind-agent/sources/util"
+	"github.com/overmindtech/sdp-go"
 )
 
 func TestProcessGet(t *testing.T) {

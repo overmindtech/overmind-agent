@@ -85,11 +85,11 @@ Vagrant.configure("2") do |config|
     go get -u github.com/go-delve/delve/cmd/dlv
 
     # Set up symlinks
-    mkdir -p /root/go/src/github.com/dylanratcliffe
-    ln -s /vagrant /root/go/src/github.com/dylanratcliffe/deviant_cli
+    mkdir -p /root/go/src/github.com/overmindtech
+    ln -s /vagrant /root/go/src/github.com/overmindtech/overmind-agent
 
     # Install dependencies
-    cd /root/go/src/github.com/dylanratcliffe/deviant_cli
+    cd /root/go/src/github.com/overmindtech/overmind-agent
     go get -v -t -d ./...
     cd -
 

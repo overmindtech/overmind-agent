@@ -1,6 +1,6 @@
-# Deviant Agent
+# overmind Agent
 
-Agent code for Deviant.
+Agent code for overmind.
 
 ## Config
 

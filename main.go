@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import "github.com/dylanratcliffe/deviant-agent/cmd"
+import "github.com/overmindtech/overmind-agent/cmd"
 
 func main() {
 	cmd.Execute()

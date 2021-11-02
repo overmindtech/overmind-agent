@@ -3,8 +3,8 @@ package dpkg
 import (
 	"fmt"
 
-	"github.com/dylanratcliffe/deviant-agent/sources/util"
-	"github.com/dylanratcliffe/sdp-go"
+	"github.com/overmindtech/overmind-agent/sources/util"
+	"github.com/overmindtech/sdp-go"
 )
 
 // DpkgSource struct on which all methods are registered

@@ -10,7 +10,7 @@ import (
 )
 
 // QueryFormat is used when querying the dpkg database
-const QueryFormat = `${Package}\n${db:Status-Status}\n${Priority}\n${Section}\n${Installed-Size}\n${Maintainer}\n${Architecture}\n${Version}\n${Homepage}\n${binary:Summary}\n${Description}\n---DEVIANTEND---\n`
+const QueryFormat = `${Package}\n${db:Status-Status}\n${Priority}\n${Section}\n${Installed-Size}\n${Maintainer}\n${Architecture}\n${Version}\n${Homepage}\n${binary:Summary}\n${Description}\n---OVERMINDEND---\n`
 
 // Package represents information about an dpkg package
 type Package struct {
@@ -191,7 +191,7 @@ func parseDpkgOutput(out string) ([]Package, error) {
 	var packages []Package
 
 	// Split the output for each package
-	for _, infoString := range strings.Split(out, "---DEVIANTEND---\n") {
+	for _, infoString := range strings.Split(out, "---OVERMINDEND---\n") {
 		// The final line could be "" therefore skip
 		if infoString == "" {
 			continue

@@ -1,13 +1,13 @@
 package sources
 
 import (
-	"github.com/dylanratcliffe/deviant-agent/sources/dpkg"
-	"github.com/dylanratcliffe/deviant-agent/sources/etcdata"
-	"github.com/dylanratcliffe/deviant-agent/sources/network"
-	"github.com/dylanratcliffe/deviant-agent/sources/psutil"
-	"github.com/dylanratcliffe/deviant-agent/sources/rpm"
-	"github.com/dylanratcliffe/deviant-agent/sources/system"
-	"github.com/dylanratcliffe/discovery"
+	"github.com/overmindtech/discovery"
+	"github.com/overmindtech/overmind-agent/sources/dpkg"
+	"github.com/overmindtech/overmind-agent/sources/etcdata"
+	"github.com/overmindtech/overmind-agent/sources/network"
+	"github.com/overmindtech/overmind-agent/sources/psutil"
+	"github.com/overmindtech/overmind-agent/sources/rpm"
+	"github.com/overmindtech/overmind-agent/sources/system"
 )
 
 var Sources []discovery.Source

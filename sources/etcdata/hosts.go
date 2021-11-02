@@ -9,8 +9,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/dylanratcliffe/deviant-agent/sources/util"
-	"github.com/dylanratcliffe/sdp-go"
+	"github.com/overmindtech/overmind-agent/sources/util"
+	"github.com/overmindtech/sdp-go"
 )
 
 // TODO: Refactor this to use a Parser

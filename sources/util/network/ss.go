@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/dylanratcliffe/deviant-agent/sources/util"
+	"github.com/overmindtech/overmind-agent/sources/util"
 )
 
 // Port represents the details of a port

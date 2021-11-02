@@ -11,7 +11,7 @@ import (
 )
 
 // QueryFormat is used when querying the RPM database
-const QueryFormat = `%{NAME}\n%{EPOCH}\n%{VERSION}\n%{RELEASE}\n%{ARCH}\n%{INSTALLTIME}\n%{GROUP}\n%{SIZE}\n%{LICENSE}\n%{SOURCERPM}\n%{VENDOR}\n%{URL}\n%{SUMMARY}\n%{DESCRIPTION}\n---DEVIANTEND---\n`
+const QueryFormat = `%{NAME}\n%{EPOCH}\n%{VERSION}\n%{RELEASE}\n%{ARCH}\n%{INSTALLTIME}\n%{GROUP}\n%{SIZE}\n%{LICENSE}\n%{SOURCERPM}\n%{VENDOR}\n%{URL}\n%{SUMMARY}\n%{DESCRIPTION}\n---OVERMINDEND---\n`
 
 // Package represents information about an RPM package
 type Package struct {
@@ -168,7 +168,7 @@ func parseRPMOutput(out string) ([]Package, error) {
 	var packages []Package
 
 	// Split the output for each package
-	for _, infoString := range strings.Split(out, "---DEVIANTEND---\n") {
+	for _, infoString := range strings.Split(out, "---OVERMINDEND---\n") {
 		// The final line could be "" therefore skip
 		if infoString == "" {
 			continue

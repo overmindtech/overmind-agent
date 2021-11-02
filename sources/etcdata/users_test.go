@@ -7,8 +7,8 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/dylanratcliffe/deviant-agent/sources/util"
-	"github.com/dylanratcliffe/sdp-go"
+	"github.com/overmindtech/overmind-agent/sources/util"
+	"github.com/overmindtech/sdp-go"
 )
 
 // ExpectedUsers This iis the array of hosts that is expected to be found in the

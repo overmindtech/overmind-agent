@@ -9,9 +9,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/dylanratcliffe/deviant-agent/sources"
-	"github.com/dylanratcliffe/discovery"
 	"github.com/mitchellh/go-homedir"
+	"github.com/overmindtech/discovery"
+	"github.com/overmindtech/overmind-agent/sources"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
@@ -60,7 +60,7 @@ Edit this once you have created your source
 		}).Info("Got config")
 
 		e := discovery.Engine{
-			Name: "deviant-agent",
+			Name: "overmind-agent",
 			NATSOptions: &discovery.NATSOptions{
 				URLs:           natsServers,
 				ConnectionName: fmt.Sprintf("%v.%v", natsNamePrefix, hostname),
@@ -140,7 +140,7 @@ func init() {
 	home, _ := homedir.Dir()
 
 	// General config options
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", fmt.Sprintf("%v/.deviant.yaml", home), "config file path")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", fmt.Sprintf("%v/.overmind.yaml", home), "config file path")
 	rootCmd.PersistentFlags().StringVar(&logLevel, "log", "info", "Set the log level. Valid values: panic, fatal, error, warn, info, debug, trace")
 
 	// Config required by all sources in order to connect to NATS. You shouldn't

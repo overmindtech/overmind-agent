@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/dylanratcliffe/sdp-go"
+	"github.com/overmindtech/sdp-go"
 )
 
 // DNSSource struct on which all methods are registered

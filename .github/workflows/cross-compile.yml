@@ -215,7 +215,7 @@ jobs:
     - name: Save artifact
       uses: actions/upload-artifact@v2
       with:
-        name: deviant-agent-${{ steps.go_env.outputs.goos }}-${{ steps.go_env.outputs.goarch }}
+        name: overmind-agent-${{ steps.go_env.outputs.goos }}-${{ steps.go_env.outputs.goarch }}
         path: |
-          deviant-agent
-          deviant-agent.exe
+          overmind-agent
+          overmind-agent.exe

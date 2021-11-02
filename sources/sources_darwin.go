@@ -1,6 +1,6 @@
 package sources
 
-import "github.com/dylanratcliffe/deviant-agent/sources/unix"
+import "github.com/overmindtech/overmind-agent/sources/unix"
 
 func init() {
 	Sources = append(Sources, &unix.FileSource{})

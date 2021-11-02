@@ -15,9 +15,9 @@ import (
 	"github.com/coreos/go-systemd/v22/dbus"
 	systemdUtil "github.com/coreos/go-systemd/v22/util"
 
-	"github.com/dylanratcliffe/deviant-agent/sources/util"
+	"github.com/overmindtech/overmind-agent/sources/util"
 
-	"github.com/dylanratcliffe/sdp-go"
+	"github.com/overmindtech/sdp-go"
 )
 
 // This backend gathers systemd information though the the systemd D-Bus API.

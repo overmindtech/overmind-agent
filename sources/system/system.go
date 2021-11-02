@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/dylanratcliffe/deviant-agent/sources/util"
-	"github.com/dylanratcliffe/sdp-go"
 	"github.com/elastic/go-sysinfo"
 	"github.com/elastic/go-sysinfo/types"
+	"github.com/overmindtech/overmind-agent/sources/util"
+	"github.com/overmindtech/sdp-go"
 )
 
 // SystemSource struct on which all methods are registered
