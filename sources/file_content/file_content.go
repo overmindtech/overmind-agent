@@ -1,7 +1,4 @@
-//go:build linux || darwin
-// +build linux darwin
-
-package unix
+package file_content
 
 import (
 	"encoding/base64"

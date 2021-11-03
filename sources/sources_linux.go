@@ -8,7 +8,6 @@ import (
 
 func init() {
 	Sources = append(Sources, &unix.FileSource{})
-	Sources = append(Sources, &unix.FileContentSource{})
 
 	netstatSource := netstat.PortSource{}
 
