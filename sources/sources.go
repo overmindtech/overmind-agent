@@ -4,6 +4,7 @@ import (
 	"github.com/overmindtech/discovery"
 	"github.com/overmindtech/overmind-agent/sources/dpkg"
 	"github.com/overmindtech/overmind-agent/sources/etcdata"
+	"github.com/overmindtech/overmind-agent/sources/file_content"
 	"github.com/overmindtech/overmind-agent/sources/network"
 	"github.com/overmindtech/overmind-agent/sources/psutil"
 	"github.com/overmindtech/overmind-agent/sources/rpm"
@@ -20,6 +21,7 @@ func init() {
 	Sources = append(Sources, &psutil.DiskSource{})
 	Sources = append(Sources, &psutil.ProcessSource{})
 	Sources = append(Sources, &system.SystemSource{})
+	Sources = append(Sources, &file_content.FileContentSource{})
 
 	dpkgSource := dpkg.DpkgSource{}
 
