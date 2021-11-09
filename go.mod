@@ -7,8 +7,8 @@ require (
 	github.com/cakturk/go-netstat v0.0.0-20200220111822-e5b49efee7a5
 	github.com/coreos/go-systemd/v22 v22.3.2
 	github.com/elastic/go-sysinfo v1.7.1
-	github.com/overmindtech/discovery v0.2.1
-	github.com/overmindtech/sdp-go v0.1.1
+	github.com/overmindtech/discovery v0.4.0
+	github.com/overmindtech/sdp-go v0.2.1
 	github.com/shirou/gopsutil v3.21.9+incompatible
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.2.1
@@ -38,7 +38,7 @@ require (
 	github.com/nats-io/nats.go v1.13.0 // indirect
 	github.com/nats-io/nkeys v0.3.0 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
-	github.com/overmindtech/sdpcache v0.1.2 // indirect
+	github.com/overmindtech/sdpcache v0.1.3 // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/prometheus/procfs v0.0.0-20190425082905-87a4384529e0 // indirect
