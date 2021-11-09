@@ -132,4 +132,41 @@ func TestRun(t *testing.T) {
 			}
 		})
 	})
+
+	t.Run("stdout should work", func(t *testing.T) {
+		params := CommandParams{
+			Command: "echo",
+			Args:    []string{"qwerty"},
+		}
+
+		item, err := params.Run()
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if stdout, _ := item.Attributes.Get("stdout"); stdout != "qwerty" {
+			t.Errorf("expected stdout to be qwerty, got %v", stdout)
+		}
+	})
+
+	t.Run("stderr should work", func(t *testing.T) {
+		params := CommandParams{
+			Command: "perl",
+			Args: []string{
+				"-e",
+				"print STDERR qwerty",
+			},
+		}
+
+		item, err := params.Run()
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if stderr, _ := item.Attributes.Get("stderr"); stderr != "qwerty" {
+			t.Errorf("expected stderr to be qwerty, got \"%v\"", stderr)
+		}
+	})
 }
