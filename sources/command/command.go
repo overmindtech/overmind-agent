@@ -42,7 +42,10 @@ func (s *CommandSource) Contexts() []string {
 	}
 }
 
-// TODO: Document this
+// Get Runs a single command as specified in the query. This should include the
+// full command to run, including arguments, as a string. This command will be
+// run with default values for all other parametres. For more complex commands,
+// use Search()
 func (s *CommandSource) Get(itemContext string, query string) (*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
@@ -74,12 +77,11 @@ func (s *CommandSource) Get(itemContext string, query string) (*sdp.Item, error)
 // should be supplied as a single JSON string, in the format of a
 // `CommandParams` struct e.g.
 //
-// TODO: Fix duration one unmarshal format has been decided
 // {
 //     "command": "cat",
 //     "args": "/etc/hosts",
 //     "expected_exit": 0,
-//     "timeout": "TODO",
+//     "timeout": "5s",
 //     "dir": "/etc",
 //     "env": {
 //         "FOO": "BAR"
