@@ -46,24 +46,28 @@ func TestSearch(t *testing.T) {
 	s := CommandSource{}
 
 	t.Run("with a valid command", func(t *testing.T) {
-		query := `{
-			"command": "cat",
-			"args": ["hosts"],
-			"expected_exit": 0,
-			"timeout": "5s",
-			"dir": "/etc",
-			"env": {
-				"FOO": "BAR"
+		if _, err := os.Stat("/etc/hosts"); err == nil {
+			query := `{
+				"command": "cat",
+				"args": ["hosts"],
+				"expected_exit": 0,
+				"timeout": "5s",
+				"dir": "/etc",
+				"env": {
+					"FOO": "BAR"
+				}
+			}`
+
+			items, err := s.Search(util.LocalContext, query)
+
+			if err != nil {
+				t.Fatal(err)
 			}
-		}`
 
-		items, err := s.Search(util.LocalContext, query)
-
-		if err != nil {
-			t.Fatal(err)
+			discovery.TestValidateItems(t, items)
+		} else {
+			t.Skip("skipping because /etc/hosts does not exist")
 		}
-
-		discovery.TestValidateItems(t, items)
 	})
 
 	t.Run("with invalid json", func(t *testing.T) {
@@ -117,23 +121,27 @@ func TestSearch(t *testing.T) {
 	})
 
 	t.Run("with a timeout", func(t *testing.T) {
-		query := `{
-			"command": "sleep",
-			"args": ["60"],
-			"expected_exit": 0,
-			"timeout": "100ms"
-		}`
+		if _, err := exec.LookPath("sleep"); err == nil {
+			query := `{
+				"command": "sleep",
+				"args": ["60"],
+				"expected_exit": 0,
+				"timeout": "100ms"
+			}`
 
-		_, err := s.Search(util.LocalContext, query)
+			_, err := s.Search(util.LocalContext, query)
 
-		if err == nil {
-			t.Fatal("expected error but got <nil>")
-		}
+			if err == nil {
+				t.Fatal("expected error but got <nil>")
+			}
 
-		expectedError := regexp.MustCompile("command execution timed out")
+			expectedError := regexp.MustCompile("command execution timed out")
 
-		if !expectedError.MatchString(err.Error()) {
-			t.Fatalf("expected error to match %v, got %v", expectedError, err)
+			if !expectedError.MatchString(err.Error()) {
+				t.Fatalf("expected error to match %v, got %v", expectedError, err)
+			}
+		} else {
+			t.Skip("skipping because sleep binary cannot be found")
 		}
 	})
 }

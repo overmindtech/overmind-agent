@@ -64,7 +64,7 @@ func TestRun(t *testing.T) {
 		}
 
 		if fmt.Sprint(stdout) != hostname {
-			t.Errorf("expected stdout to be 0 got %v", stdout)
+			t.Errorf("expected stdout to be %v got %v", hostname, stdout)
 		}
 	})
 
