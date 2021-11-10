@@ -61,7 +61,7 @@ func (s *CommandSource) Get(itemContext string, query string) (*sdp.Item, error)
 	args := make([]string, len(splitQuery)-1)
 
 	// Loop over the remaining arguments and copy into new slice
-	for i := 1; i != len(splitQuery)-1; i++ {
+	for i := 1; i != len(splitQuery); i++ {
 		args[i-1] = splitQuery[i]
 	}
 
@@ -79,7 +79,7 @@ func (s *CommandSource) Get(itemContext string, query string) (*sdp.Item, error)
 //
 // {
 //     "command": "cat",
-//     "args": "/etc/hosts",
+//     "args": ["/etc/hosts"],
 //     "expected_exit": 0,
 //     "timeout": "5s",
 //     "dir": "/etc",
