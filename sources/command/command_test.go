@@ -137,3 +137,28 @@ func TestSearch(t *testing.T) {
 		}
 	})
 }
+
+func TestFind(t *testing.T) {
+	s := CommandSource{}
+
+	_, err := s.Find(util.LocalContext)
+
+	if err == nil {
+		t.Fatal("expected error but got <nil>")
+	}
+
+	expectedError := regexp.MustCompile("the command source only supports the Get and Search methods")
+
+	if !expectedError.MatchString(err.Error()) {
+		t.Errorf("expected error to match %v, got %v", expectedError, err)
+	}
+
+}
+
+func TestHidden(t *testing.T) {
+	s := CommandSource{}
+
+	if !s.Hidden() {
+		t.Error("Source should be hidden")
+	}
+}

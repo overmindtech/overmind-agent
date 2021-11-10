@@ -118,3 +118,10 @@ func (s *CommandSource) Find(itemContext string) ([]*sdp.Item, error) {
 		Context:     itemContext,
 	}
 }
+
+// Hidden command items should be hidden as they are only used when needed,
+// and should be covered by some higher layer of abstraction like a secondary
+// source
+func (s *CommandSource) Hidden() bool {
+	return true
+}
