@@ -1,6 +1,7 @@
 package command
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -41,6 +42,7 @@ func (s *CommandSource) Contexts() []string {
 	}
 }
 
+// TODO: Document this
 func (s *CommandSource) Get(itemContext string, query string) (*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
@@ -52,7 +54,7 @@ func (s *CommandSource) Get(itemContext string, query string) (*sdp.Item, error)
 
 	splitQuery := strings.Split(query, " ")
 
-	// commandName := splitQuery[0]
+	commandName := splitQuery[0]
 	args := make([]string, len(splitQuery)-1)
 
 	// Loop over the remaining arguments and copy into new slice
@@ -60,12 +62,49 @@ func (s *CommandSource) Get(itemContext string, query string) (*sdp.Item, error)
 		args[i-1] = splitQuery[i]
 	}
 
-	return nil, nil
+	params := CommandParams{
+		Command: commandName,
+		Args:    args,
+	}
 
+	return params.Run()
 }
 
+// Search runs a command with a given set of parameteres. These paremeteres
+// should be supplied as a single JSON string, in the format of a
+// `CommandParams` struct e.g.
+//
+// TODO: Fix duration one unmarshal format has been decided
+// {
+//     "command": "cat",
+//     "args": "/etc/hosts",
+//     "expected_exit": 0,
+//     "timeout": "TODO",
+//     "dir": "/etc",
+//     "env": {
+//         "FOO": "BAR"
+//     }
+// }
 func (s *CommandSource) Search(itemContext string, query string) ([]*sdp.Item, error) {
-	return []*sdp.Item{}, nil
+	var params CommandParams
+	var item *sdp.Item
+
+	items := make([]*sdp.Item, 0)
+	err := json.Unmarshal([]byte(query), &params)
+
+	if err != nil {
+		return items, &sdp.ItemRequestError{
+			ErrorType:   sdp.ItemRequestError_OTHER,
+			ErrorString: fmt.Sprintf("could not unmarshal JSON query, error: %v", err.Error()),
+			Context:     util.LocalContext,
+		}
+	}
+
+	item, err = params.Run()
+
+	items = append(items, item)
+
+	return items, err
 }
 
 // Find Gets information about all item that the source can possibly find. If

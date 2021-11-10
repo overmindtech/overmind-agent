@@ -3,6 +3,7 @@ package command
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -33,6 +34,46 @@ type CommandParams struct {
 	// Env specifies environment variables that should be set when running the
 	// command
 	Env map[string]string `json:"env"`
+}
+
+// MarshalJSON Converts the object to JSON
+func (cp CommandParams) MarshalJSON() ([]byte, error) {
+	// Modify the Timeout parameter so that it can be stored in a more readable
+	// format (i.e. a string)
+	type Alias CommandParams
+	return json.Marshal(&struct {
+		Timeout string `json:"timeout"`
+		*Alias
+	}{
+		Timeout: cp.Timeout.String(),
+		Alias:   (*Alias)(&cp),
+	})
+}
+
+// UnmarshalJSON Converts the object from JSON
+func (cp *CommandParams) UnmarshalJSON(data []byte) error {
+	type Alias CommandParams
+	aux := &struct {
+		Timeout string `json:"timeout"`
+		*Alias
+	}{
+		Alias: (*Alias)(cp),
+	}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	// Parse the `timeout` parameter using time.ParseDuration meaning that the
+	// duration should be in a human readable format e.g. "300ms", "-1.5h" or
+	// "2h45m". Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+	timeoutDuration, err := time.ParseDuration(aux.Timeout)
+	if err != nil {
+		return err
+	}
+
+	cp.Timeout = timeoutDuration
+	return nil
 }
 
 func (cp *CommandParams) Run() (*sdp.Item, error) {

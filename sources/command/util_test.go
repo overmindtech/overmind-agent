@@ -1,6 +1,7 @@
 package command
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"testing"
@@ -169,4 +170,80 @@ func TestRun(t *testing.T) {
 			t.Errorf("expected stderr to be qwerty, got \"%v\"", stderr)
 		}
 	})
+}
+
+const jsonString = `{
+	"timeout": "500ms",
+	"command": "cat",
+	"args": [
+		"hosts"
+	],
+	"expected_exit": 0,
+	"dir": "/etc",
+	"env": {
+		"TEST": "foo"
+	}
+}`
+
+var jsonObject = CommandParams{
+	Command:      "cat",
+	Args:         []string{"hosts"},
+	ExpectedExit: 0,
+	Timeout:      500 * time.Millisecond,
+	Dir:          "/etc",
+	Env: map[string]string{
+		"TEST": "foo",
+	},
+}
+
+func TestMarshalJSON(t *testing.T) {
+	var b []byte
+	var err error
+	var resultString string
+
+	b, err = json.MarshalIndent(jsonObject, "", "	")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resultString = string(b)
+
+	if resultString != jsonString {
+		t.Errorf("JSON did not match. Expected:\n%v\nGot:\n%v", jsonString, resultString)
+	}
+}
+
+func TestUnmarshalJSON(t *testing.T) {
+	var cp CommandParams
+
+	err := json.Unmarshal([]byte(jsonString), &cp)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if cp.Command != jsonObject.Command {
+		t.Errorf("Command did not match, got %v, expected %v", cp.Command, jsonObject.Command)
+	}
+
+	if cp.Dir != jsonObject.Dir {
+		t.Errorf("Dir did not match, got %v, expected %v", cp.Dir, jsonObject.Dir)
+	}
+
+	if cp.ExpectedExit != jsonObject.ExpectedExit {
+		t.Errorf("ExpectedExit did not match, got %v, expected %v", cp.ExpectedExit, jsonObject.ExpectedExit)
+	}
+
+	if cp.Args[0] != jsonObject.Args[0] {
+		t.Errorf("Args[0] did not match, got %v, expected %v", cp.Args[0], jsonObject.Args[0])
+	}
+
+	if cp.Timeout.String() != jsonObject.Timeout.String() {
+		t.Errorf("Timeout.String() did not match, got %v, expected %v", cp.Timeout.String(), jsonObject.Timeout.String())
+	}
+
+	if cp.Env["TEST"] != jsonObject.Env["TEST"] {
+		t.Errorf("Env[\"TEST\"] did not match, got %v, expected %v", cp.Env["TEST"], jsonObject.Env["TEST"])
+	}
 }
