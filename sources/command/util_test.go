@@ -131,9 +131,17 @@ func TestRun(t *testing.T) {
 	})
 
 	t.Run("with non-zero exit codes", func(t *testing.T) {
+		var command string
+
+		if runtime.GOOS == "windows" {
+			command = "ping"
+		} else {
+			command = "cat"
+		}
+
 		t.Run("an unexpected non-zero exit should fail", func(t *testing.T) {
 			params := CommandParams{
-				Command:      "cat",
+				Command:      command,
 				Args:         []string{"somethingNotReal"},
 				ExpectedExit: 0,
 			}
@@ -147,7 +155,7 @@ func TestRun(t *testing.T) {
 
 		t.Run("an expected non-zero exit should pass", func(t *testing.T) {
 			params := CommandParams{
-				Command:      "cat",
+				Command:      command,
 				Args:         []string{"somethingNotReal"},
 				ExpectedExit: 1,
 			}
@@ -161,6 +169,10 @@ func TestRun(t *testing.T) {
 	})
 
 	t.Run("stdout should work", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("Not supported on windows")
+		}
+
 		params := CommandParams{
 			Command: "echo",
 			Args:    []string{"qwerty"},
@@ -178,6 +190,10 @@ func TestRun(t *testing.T) {
 	})
 
 	t.Run("stderr should work", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("Not supported on windows")
+		}
+
 		params := CommandParams{
 			Command: "perl",
 			Args: []string{
@@ -194,6 +210,48 @@ func TestRun(t *testing.T) {
 
 		if stderr, _ := item.Attributes.Get("stderr"); stderr != "qwerty" {
 			t.Errorf("expected stderr to be qwerty, got \"%v\"", stderr)
+		}
+	})
+
+	t.Run("stdout should work (windows)", func(t *testing.T) {
+		if runtime.GOOS != "windows" {
+			t.Skip("Only runs on windows")
+		}
+
+		params := CommandParams{
+			Command:      "xcopy.exe",
+			ExpectedExit: 4,
+		}
+
+		item, err := params.Run()
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if stdout, _ := item.Attributes.Get("stdout"); stdout != "0 File(s) copied" {
+			t.Errorf("expected stdout to be \"0 File(s) copied\", got %v", stdout)
+		}
+	})
+
+	t.Run("stderr should work (windows", func(t *testing.T) {
+		if runtime.GOOS != "windows" {
+			t.Skip("Only runs on windows")
+		}
+
+		params := CommandParams{
+			Command:      "xcopy.exe",
+			ExpectedExit: 4,
+		}
+
+		item, err := params.Run()
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if stderr, _ := item.Attributes.Get("stderr"); stderr != "Invalid number of parameters" {
+			t.Errorf("expected stderr to be \"Invalid number of parameters\", got \"%v\"", stderr)
 		}
 	})
 }
