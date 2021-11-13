@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os/exec"
+	"runtime"
 	"strings"
 	"time"
 
@@ -100,16 +101,17 @@ func (cp *CommandParams) Run() (*sdp.Item, error) {
 	err := command.Run()
 
 	if err != nil {
+		// This will return an error if the context has ended
+		if ctx.Err() == context.DeadlineExceeded {
+			return nil, &sdp.ItemRequestError{
+				ErrorType:   sdp.ItemRequestError_OTHER,
+				ErrorString: fmt.Sprintf("command execution timed out.\nSTDOUT: %v\nSTDERR: %v", stdout.String(), stderr.String()),
+				Context:     util.LocalContext,
+			}
+		}
+
 		switch e := err.(type) {
 		case *exec.ExitError:
-			if e.Error() == "signal: killed" {
-				return nil, &sdp.ItemRequestError{
-					ErrorType:   sdp.ItemRequestError_OTHER,
-					ErrorString: fmt.Sprintf("command execution timed out.\nSTDOUT: %v\nSTDERR: %v", stdout.String(), stderr.String()),
-					Context:     util.LocalContext,
-				}
-			}
-
 			if e.ExitCode() != cp.ExpectedExit {
 				return nil, &sdp.ItemRequestError{
 					ErrorType:   sdp.ItemRequestError_OTHER,
@@ -132,8 +134,8 @@ func (cp *CommandParams) Run() (*sdp.Item, error) {
 		"name":     cp.Command,
 		"args":     cp.Args,
 		"exitCode": command.ProcessState.ExitCode(),
-		"stdout":   strings.TrimSuffix(stdout.String(), "\n"),
-		"stderr":   strings.TrimSuffix(stderr.String(), "\n"),
+		"stdout":   strings.TrimSuffix(stdout.String(), platformNewline()),
+		"stderr":   strings.TrimSuffix(stderr.String(), platformNewline()),
 	})
 
 	if err != nil {
@@ -172,4 +174,13 @@ func envToString(envs map[string]string) []string {
 	}
 
 	return envStrings
+}
+
+// platformNewline Returns the newline string for this platform (\n or \r\n)
+func platformNewline() string {
+	if runtime.GOOS == "windows" {
+		return "\r\n"
+	} else {
+		return "\n"
+	}
 }

@@ -4,16 +4,39 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"regexp"
+	"runtime"
 	"testing"
 	"time"
 
 	"github.com/overmindtech/discovery"
 )
 
+// sleepCMD Returns a command and args that sleeps for a given period, depending
+// on the GOOS
+func sleepCMD(seconds int) (string, []string) {
+	var command string
+	var args []string
+
+	if runtime.GOOS == "windows" {
+		command = "ping"
+		args = []string{
+			"127.0.0.1",
+			"-n",
+			fmt.Sprint(seconds + 1),
+		}
+	} else {
+		command = "sleep"
+		args = []string{
+			fmt.Sprint(seconds),
+		}
+	}
+
+	return command, args
+}
+
 func TestRun(t *testing.T) {
 	t.Run("with working comand", func(t *testing.T) {
-		t.Parallel()
-
 		params := CommandParams{
 			Command:      "hostname",
 			ExpectedExit: 0,
@@ -72,13 +95,11 @@ func TestRun(t *testing.T) {
 
 	t.Run("with timeout", func(t *testing.T) {
 		t.Run("returning before the timeout", func(t *testing.T) {
-			t.Parallel()
+			command, args := sleepCMD(1)
 
 			params := CommandParams{
-				Command: "sleep",
-				Args: []string{
-					"1",
-				},
+				Command: command,
+				Args:    args,
 				Timeout: 2 * time.Second,
 			}
 
@@ -92,30 +113,35 @@ func TestRun(t *testing.T) {
 		})
 
 		t.Run("timing out", func(t *testing.T) {
-			t.Parallel()
+			command, args := sleepCMD(10)
+			timeoutrror := regexp.MustCompile("timed out")
 
 			params := CommandParams{
-				Command: "sleep",
-				Args: []string{
-					"1",
-				},
+				Command: command,
+				Args:    args,
 				Timeout: 500 * time.Millisecond,
 			}
 
 			_, err := params.Run()
 
-			if err == nil {
-				t.Error("No error returned, command should have timed out")
+			if err == nil || !timeoutrror.MatchString(err.Error()) {
+				t.Error("No error returned or error was not timeout, command should have timed out")
 			}
 		})
 	})
 
 	t.Run("with non-zero exit codes", func(t *testing.T) {
-		t.Run("an unexpected non-zero exit should fail", func(t *testing.T) {
-			t.Parallel()
+		var command string
 
+		if runtime.GOOS == "windows" {
+			command = "ping"
+		} else {
+			command = "cat"
+		}
+
+		t.Run("an unexpected non-zero exit should fail", func(t *testing.T) {
 			params := CommandParams{
-				Command:      "cat",
+				Command:      command,
 				Args:         []string{"somethingNotReal"},
 				ExpectedExit: 0,
 			}
@@ -128,10 +154,8 @@ func TestRun(t *testing.T) {
 		})
 
 		t.Run("an expected non-zero exit should pass", func(t *testing.T) {
-			t.Parallel()
-
 			params := CommandParams{
-				Command:      "cat",
+				Command:      command,
 				Args:         []string{"somethingNotReal"},
 				ExpectedExit: 1,
 			}
@@ -145,7 +169,9 @@ func TestRun(t *testing.T) {
 	})
 
 	t.Run("stdout should work", func(t *testing.T) {
-		t.Parallel()
+		if runtime.GOOS == "windows" {
+			t.Skip("Not supported on windows")
+		}
 
 		params := CommandParams{
 			Command: "echo",
@@ -164,7 +190,9 @@ func TestRun(t *testing.T) {
 	})
 
 	t.Run("stderr should work", func(t *testing.T) {
-		t.Parallel()
+		if runtime.GOOS == "windows" {
+			t.Skip("Not supported on windows")
+		}
 
 		params := CommandParams{
 			Command: "perl",
@@ -182,6 +210,48 @@ func TestRun(t *testing.T) {
 
 		if stderr, _ := item.Attributes.Get("stderr"); stderr != "qwerty" {
 			t.Errorf("expected stderr to be qwerty, got \"%v\"", stderr)
+		}
+	})
+
+	t.Run("stdout should work (windows)", func(t *testing.T) {
+		if runtime.GOOS != "windows" {
+			t.Skip("Only runs on windows")
+		}
+
+		params := CommandParams{
+			Command:      "xcopy.exe",
+			ExpectedExit: 4,
+		}
+
+		item, err := params.Run()
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if stdout, _ := item.Attributes.Get("stdout"); stdout != "0 File(s) copied" {
+			t.Errorf("expected stdout to be \"0 File(s) copied\", got %v", stdout)
+		}
+	})
+
+	t.Run("stderr should work (windows", func(t *testing.T) {
+		if runtime.GOOS != "windows" {
+			t.Skip("Only runs on windows")
+		}
+
+		params := CommandParams{
+			Command:      "xcopy.exe",
+			ExpectedExit: 4,
+		}
+
+		item, err := params.Run()
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if stderr, _ := item.Attributes.Get("stderr"); stderr != "Invalid number of parameters" {
+			t.Errorf("expected stderr to be \"Invalid number of parameters\", got \"%v\"", stderr)
 		}
 	})
 }
@@ -211,8 +281,6 @@ var jsonObject = CommandParams{
 }
 
 func TestMarshalJSON(t *testing.T) {
-	t.Parallel()
-
 	var b []byte
 	var err error
 	var resultString string
@@ -231,8 +299,6 @@ func TestMarshalJSON(t *testing.T) {
 }
 
 func TestUnmarshalJSON(t *testing.T) {
-	t.Parallel()
-
 	var cp CommandParams
 
 	err := json.Unmarshal([]byte(jsonString), &cp)
