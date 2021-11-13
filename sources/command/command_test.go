@@ -13,6 +13,8 @@ import (
 func TestGet(t *testing.T) {
 	if _, err := exec.LookPath("cat"); err == nil {
 		t.Run("cat a file", func(t *testing.T) {
+			t.Parallel()
+
 			if _, err := os.Stat("/etc/hosts"); err == nil {
 				s := CommandSource{}
 
@@ -29,6 +31,8 @@ func TestGet(t *testing.T) {
 		})
 
 		t.Run("command that fails", func(t *testing.T) {
+			t.Parallel()
+
 			s := CommandSource{}
 
 			_, err := s.Get(util.LocalContext, "cat something doesn't exist")
@@ -46,6 +50,8 @@ func TestSearch(t *testing.T) {
 	s := CommandSource{}
 
 	t.Run("with a valid command", func(t *testing.T) {
+		t.Parallel()
+
 		if _, err := os.Stat("/etc/hosts"); err == nil {
 			query := `{
 				"command": "cat",
@@ -71,6 +77,8 @@ func TestSearch(t *testing.T) {
 	})
 
 	t.Run("with invalid json", func(t *testing.T) {
+		t.Parallel()
+
 		query := `{
 			"command": "cat",
 			"args": ["hosts"]
@@ -96,6 +104,8 @@ func TestSearch(t *testing.T) {
 	})
 
 	t.Run("with invalid data types", func(t *testing.T) {
+		t.Parallel()
+
 		query := `{
 			"command": "cat",
 			"args": ["hosts"],
@@ -121,6 +131,8 @@ func TestSearch(t *testing.T) {
 	})
 
 	t.Run("with a timeout", func(t *testing.T) {
+		t.Parallel()
+
 		if _, err := exec.LookPath("sleep"); err == nil {
 			query := `{
 				"command": "sleep",
@@ -147,6 +159,8 @@ func TestSearch(t *testing.T) {
 }
 
 func TestFind(t *testing.T) {
+	t.Parallel()
+
 	s := CommandSource{}
 
 	_, err := s.Find(util.LocalContext)
@@ -164,6 +178,8 @@ func TestFind(t *testing.T) {
 }
 
 func TestHidden(t *testing.T) {
+	t.Parallel()
+
 	s := CommandSource{}
 
 	if !s.Hidden() {
