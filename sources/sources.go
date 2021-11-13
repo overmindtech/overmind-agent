@@ -2,6 +2,7 @@ package sources
 
 import (
 	"github.com/overmindtech/discovery"
+	"github.com/overmindtech/overmind-agent/sources/command"
 	"github.com/overmindtech/overmind-agent/sources/dpkg"
 	"github.com/overmindtech/overmind-agent/sources/etcdata"
 	"github.com/overmindtech/overmind-agent/sources/file_content"
@@ -22,6 +23,7 @@ func init() {
 	Sources = append(Sources, &psutil.ProcessSource{})
 	Sources = append(Sources, &system.SystemSource{})
 	Sources = append(Sources, &file_content.FileContentSource{})
+	Sources = append(Sources, &command.CommandSource{})
 
 	dpkgSource := dpkg.DpkgSource{}
 
