@@ -100,29 +100,19 @@ func (cp *CommandParams) Run() (*sdp.Item, error) {
 	err := command.Run()
 
 	if err != nil {
-		switch e := err.(type) {
-		case *exec.ExitError:
-			if e.Error() == "signal: killed" {
-				return nil, &sdp.ItemRequestError{
-					ErrorType:   sdp.ItemRequestError_OTHER,
-					ErrorString: fmt.Sprintf("command execution timed out.\nSTDOUT: %v\nSTDERR: %v", stdout.String(), stderr.String()),
-					Context:     util.LocalContext,
-				}
-			}
-
-			if e.ExitCode() != cp.ExpectedExit {
-				return nil, &sdp.ItemRequestError{
-					ErrorType:   sdp.ItemRequestError_OTHER,
-					ErrorString: fmt.Sprintf("command execution failed. Error: %v\nSTDOUT: %v\nSTDERR: %v", err, stdout.String(), stderr.String()),
-					Context:     util.LocalContext,
-				}
-			}
-		default:
+		// This will return an error if the context has ended
+		if ctx.Err() == context.DeadlineExceeded {
 			return nil, &sdp.ItemRequestError{
 				ErrorType:   sdp.ItemRequestError_OTHER,
-				ErrorString: fmt.Sprintf("command execution failed. Error: %v\nSTDOUT: %v\nSTDERR: %v", err, stdout.String(), stderr.String()),
+				ErrorString: fmt.Sprintf("command execution timed out.\nSTDOUT: %v\nSTDERR: %v", stdout.String(), stderr.String()),
 				Context:     util.LocalContext,
 			}
+		}
+
+		return nil, &sdp.ItemRequestError{
+			ErrorType:   sdp.ItemRequestError_OTHER,
+			ErrorString: fmt.Sprintf("command execution failed. Error: %v\nSTDOUT: %v\nSTDERR: %v", err, stdout.String(), stderr.String()),
+			Context:     util.LocalContext,
 		}
 	}
 

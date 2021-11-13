@@ -4,16 +4,39 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"regexp"
+	"runtime"
 	"testing"
 	"time"
 
 	"github.com/overmindtech/discovery"
 )
 
+// sleepCMD Returns a command and args that sleeps for a given period, depending
+// on the GOOS
+func sleepCMD(seconds int) (string, []string) {
+	var command string
+	var args []string
+
+	if runtime.GOOS == "windows" {
+		command = "ping"
+		args = []string{
+			"127.0.0.1",
+			"-n",
+			fmt.Sprint(seconds + 1),
+		}
+	} else {
+		command = "sleep"
+		args = []string{
+			fmt.Sprint(seconds),
+		}
+	}
+
+	return command, args
+}
+
 func TestRun(t *testing.T) {
 	t.Run("with working comand", func(t *testing.T) {
-		t.Parallel()
-
 		params := CommandParams{
 			Command:      "hostname",
 			ExpectedExit: 0,
@@ -72,13 +95,11 @@ func TestRun(t *testing.T) {
 
 	t.Run("with timeout", func(t *testing.T) {
 		t.Run("returning before the timeout", func(t *testing.T) {
-			t.Parallel()
+			command, args := sleepCMD(1)
 
 			params := CommandParams{
-				Command: "sleep",
-				Args: []string{
-					"1",
-				},
+				Command: command,
+				Args:    args,
 				Timeout: 2 * time.Second,
 			}
 
@@ -92,28 +113,25 @@ func TestRun(t *testing.T) {
 		})
 
 		t.Run("timing out", func(t *testing.T) {
-			t.Parallel()
+			command, args := sleepCMD(10)
+			timeoutrror := regexp.MustCompile("timed out")
 
 			params := CommandParams{
-				Command: "sleep",
-				Args: []string{
-					"1",
-				},
+				Command: command,
+				Args:    args,
 				Timeout: 500 * time.Millisecond,
 			}
 
 			_, err := params.Run()
 
-			if err == nil {
-				t.Error("No error returned, command should have timed out")
+			if err == nil || !timeoutrror.MatchString(err.Error()) {
+				t.Error("No error returned or error was not timeout, command should have timed out")
 			}
 		})
 	})
 
 	t.Run("with non-zero exit codes", func(t *testing.T) {
 		t.Run("an unexpected non-zero exit should fail", func(t *testing.T) {
-			t.Parallel()
-
 			params := CommandParams{
 				Command:      "cat",
 				Args:         []string{"somethingNotReal"},
@@ -128,8 +146,6 @@ func TestRun(t *testing.T) {
 		})
 
 		t.Run("an expected non-zero exit should pass", func(t *testing.T) {
-			t.Parallel()
-
 			params := CommandParams{
 				Command:      "cat",
 				Args:         []string{"somethingNotReal"},
@@ -145,8 +161,6 @@ func TestRun(t *testing.T) {
 	})
 
 	t.Run("stdout should work", func(t *testing.T) {
-		t.Parallel()
-
 		params := CommandParams{
 			Command: "echo",
 			Args:    []string{"qwerty"},
@@ -164,8 +178,6 @@ func TestRun(t *testing.T) {
 	})
 
 	t.Run("stderr should work", func(t *testing.T) {
-		t.Parallel()
-
 		params := CommandParams{
 			Command: "perl",
 			Args: []string{
@@ -211,8 +223,6 @@ var jsonObject = CommandParams{
 }
 
 func TestMarshalJSON(t *testing.T) {
-	t.Parallel()
-
 	var b []byte
 	var err error
 	var resultString string
@@ -231,8 +241,6 @@ func TestMarshalJSON(t *testing.T) {
 }
 
 func TestUnmarshalJSON(t *testing.T) {
-	t.Parallel()
-
 	var cp CommandParams
 
 	err := json.Unmarshal([]byte(jsonString), &cp)
