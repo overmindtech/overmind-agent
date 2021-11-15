@@ -390,14 +390,10 @@ func TestShellWrap(t *testing.T) {
 		command := "cat"
 		args := []string{"/home/dylan/my file.txt"}
 
-		newCommand, newArgs, err := ShellWrap(command, args)
+		_, newArgs, err := ShellWrap(command, args)
 
 		if err != nil {
 			t.Fatal(err)
-		}
-
-		if newCommand != "/bin/bash" {
-			t.Errorf("Expected command to be /bin/bash, got %v", newCommand)
 		}
 
 		if newArgs[1] != "cat '/home/dylan/my file.txt'" {
