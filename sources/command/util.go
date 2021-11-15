@@ -37,11 +37,14 @@ type CommandParams struct {
 	// command
 	Env map[string]string `json:"env"`
 
-	// STDIN Specifies the binary data that should be piped to the command as
+	// STDIN specifies the binary data that should be piped to the command as
 	// STDIN. This can be used for example to simulate user intaction for
 	// programs that read from STDIN. This will be encoded using base64 to a
 	// string in JSON
 	STDIN []byte `json:"stdin"`
+
+	// RunAs specifies the user that the command should be run as
+	RunAs string `json:"run_as"`
 }
 
 // MarshalJSON Converts the object to JSON
