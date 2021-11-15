@@ -168,6 +168,23 @@ func TestRun(t *testing.T) {
 		})
 	})
 
+	t.Run("shell builtins should work", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("Not supported on windows")
+		}
+
+		params := CommandParams{
+			Command: "exit",
+			Args:    []string{"1"},
+		}
+
+		_, err := params.Run()
+
+		if err == nil {
+			t.Fatal("expected command to fail but didn't")
+		}
+	})
+
 	t.Run("stdout should work", func(t *testing.T) {
 		if runtime.GOOS == "windows" {
 			t.Skip("Not supported on windows")
@@ -342,4 +359,44 @@ func TestUnmarshalJSON(t *testing.T) {
 	if cp.RunAs != "root" {
 		t.Errorf("Expected RunAs to be root, got %v", cp.RunAs)
 	}
+}
+
+func TestShellWrap(t *testing.T) {
+	t.Run("with basic command", func(t *testing.T) {
+		command := "hostname"
+		args := []string{}
+
+		newCommand, newArgs, err := ShellWrap(command, args)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if newCommand != "/bin/bash" {
+			t.Errorf("Expected command to be /bin/bash, got %v", newCommand)
+		}
+
+		if newArgs[1] != "hostname" {
+			t.Errorf("Expected wrapped command to be hostname, got %v", newArgs[1])
+		}
+	})
+
+	t.Run("with a file with spaces", func(t *testing.T) {
+		command := "cat"
+		args := []string{"/home/dylan/my file.txt"}
+
+		newCommand, newArgs, err := ShellWrap(command, args)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if newCommand != "/bin/bash" {
+			t.Errorf("Expected command to be /bin/bash, got %v", newCommand)
+		}
+
+		if newArgs[1] != "cat '/home/dylan/my file.txt'" {
+			t.Errorf("Expected wrapped command to be \"cat '/home/dylan/my file.txt'\", got %v", newArgs[1])
+		}
+	})
 }

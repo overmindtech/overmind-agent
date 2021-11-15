@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os/exec"
 	"runtime"
@@ -13,6 +14,8 @@ import (
 
 	"github.com/overmindtech/overmind-agent/sources/util"
 	"github.com/overmindtech/sdp-go"
+
+	"github.com/alessio/shellescape"
 )
 
 const DefaultTimeout = 10 * time.Second
@@ -112,9 +115,30 @@ func (cp *CommandParams) Run() (*sdp.Item, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), cp.Timeout)
 	defer cancel()
 
+	var commandString string
+	var args []string
+	var err error
+
+	if runtime.GOOS == "windows" {
+		return nil, &sdp.ItemRequestError{
+			ErrorType:   sdp.ItemRequestError_OTHER,
+			ErrorString: "Not currently supported on windows",
+			Context:     util.LocalContext,
+		}
+	} else {
+		commandString, args, err = ShellWrap(cp.Command, cp.Args)
+
+		if err != nil {
+			return nil, &sdp.ItemRequestError{
+				ErrorType:   sdp.ItemRequestError_OTHER,
+				ErrorString: err.Error(),
+				Context:     util.LocalContext,
+			}
+		}
+	}
 	// TODO: Run inside a shell
 	// TODO: Handle using powershell on windows
-	command := exec.CommandContext(ctx, cp.Command, cp.Args...)
+	command := exec.CommandContext(ctx, commandString, args...)
 
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
@@ -124,7 +148,7 @@ func (cp *CommandParams) Run() (*sdp.Item, error) {
 	command.Dir = cp.Dir
 	command.Env = envToString(cp.Env)
 
-	err := command.Run()
+	err = command.Run()
 
 	if err != nil {
 		// This will return an error if the context has ended
@@ -188,6 +212,34 @@ func (cp *CommandParams) Run() (*sdp.Item, error) {
 	}
 
 	return &item, nil
+}
+
+// ShellWrap Wraps a given command and args in the required arguments so that
+// the command runs inside a shell, the default being bash, but falling back to
+// sh if bash is not available
+func ShellWrap(command string, args []string) (string, []string, error) {
+	var shell string
+
+	// Get the full path to the shell, bash or sh
+	if bashPath, err := exec.LookPath("bash"); err == nil {
+		shell = bashPath
+	} else if shPath, err := exec.LookPath("sh"); err == nil {
+		shell = shPath
+	} else {
+		return "", []string{}, errors.New("could not find bash or sh on the PATH")
+	}
+
+	// Join the command and args into a single array
+	joined := []string{command}
+	joined = append(joined, args...)
+
+	// Escape this so that it can be passed as a single thing
+	escaped := shellescape.QuoteCommand(joined)
+
+	// Create the arguments which are basically /bin/bash -c {your stuff here}
+	args = []string{"-c", escaped}
+
+	return shell, args, nil
 }
 
 // envToString Converts a map of environment variables to an array of equals

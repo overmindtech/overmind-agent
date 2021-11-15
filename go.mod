@@ -15,6 +15,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.9.0
 	gopkg.in/yaml.v2 v2.4.0
+	github.com/alessio/shellescape v1.4.1
 )
 
 // Transitive dependencies
