@@ -267,7 +267,8 @@ const jsonString = `{
 	"dir": "/etc",
 	"env": {
 		"TEST": "foo"
-	}
+	},
+	"run_as": "root"
 }`
 
 var jsonObject = CommandParams{
@@ -280,6 +281,7 @@ var jsonObject = CommandParams{
 		"TEST": "foo",
 	},
 	STDIN: []byte{121, 101, 115, 10, 102, 111, 111, 32, 98, 97, 114},
+	RunAs: "root",
 }
 
 func TestMarshalJSON(t *testing.T) {
@@ -335,5 +337,9 @@ func TestUnmarshalJSON(t *testing.T) {
 
 	if string(cp.STDIN) != "yes\nfoo bar" {
 		t.Errorf("Expected stdin to  be the string \"yes\\nfoo bar\", got %v", string(cp.STDIN))
+	}
+
+	if cp.RunAs != "root" {
+		t.Errorf("Expected RunAs to be root, got %v", cp.RunAs)
 	}
 }
