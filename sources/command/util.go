@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
 	"runtime"
 	"strings"
@@ -120,24 +121,19 @@ func (cp *CommandParams) Run() (*sdp.Item, error) {
 	var err error
 
 	if runtime.GOOS == "windows" {
-		return nil, &sdp.ItemRequestError{
-			ErrorType:   sdp.ItemRequestError_OTHER,
-			ErrorString: "Not currently supported on windows",
-			Context:     util.LocalContext,
-		}
+		commandString, args, err = PowerShellWrap(cp.Command, cp.Args)
 	} else {
 		commandString, args, err = ShellWrap(cp.Command, cp.Args)
+	}
 
-		if err != nil {
-			return nil, &sdp.ItemRequestError{
-				ErrorType:   sdp.ItemRequestError_OTHER,
-				ErrorString: err.Error(),
-				Context:     util.LocalContext,
-			}
+	if err != nil {
+		return nil, &sdp.ItemRequestError{
+			ErrorType:   sdp.ItemRequestError_OTHER,
+			ErrorString: err.Error(),
+			Context:     util.LocalContext,
 		}
 	}
-	// TODO: Run inside a shell
-	// TODO: Handle using powershell on windows
+
 	command := exec.CommandContext(ctx, commandString, args...)
 
 	var stdout bytes.Buffer
@@ -146,7 +142,7 @@ func (cp *CommandParams) Run() (*sdp.Item, error) {
 	command.Stdout = &stdout
 	command.Stderr = &stderr
 	command.Dir = cp.Dir
-	command.Env = envToString(cp.Env)
+	command.Env = envToString(mergeEnv(cp.Env))
 
 	err = command.Run()
 
@@ -242,6 +238,36 @@ func ShellWrap(command string, args []string) (string, []string, error) {
 	return shell, args, nil
 }
 
+// PowerShellWrap Wraps a given command and args in the required arguments so
+// that the command runs inside powershell
+func PowerShellWrap(command string, args []string) (string, []string, error) {
+	// Encode the original command as base64
+	powershellArray := []string{command}
+	powershellArray = append(powershellArray, args...)
+
+	// Append deliberate exit to ensure that the powershell.exe process exits
+	// with a code other than 1
+	powershellArray = append(powershellArray, "; exit $LASTEXITCODE")
+	powershellCommand := strings.Join(powershellArray, " ")
+
+	powershellArgs := []string{
+		"-NoLogo",          // Hides the copyright banner at startup
+		"-NoProfile",       // Does not load the Windows PowerShell profile
+		"-NonInteractive",  // Does not present an interactive prompt to the user
+		"-ExecutionPolicy", // Allow running of unsigned code
+		"bypass",
+		powershellCommand,
+	}
+
+	// TODO: The stuff that I'm doing hwere means that the actual powershell
+	// process will exit with 1 if the command fails, regardless of the exit
+	// code of the command itself. I need to find some way to pass this though.
+	// Read this:
+	// https://stackoverflow.com/questions/50200325/returning-an-exit-code-from-a-powershell-script
+
+	return "powershell.exe", powershellArgs, nil
+}
+
 // envToString Converts a map of environment variables to an array of equals
 // separated strings
 func envToString(envs map[string]string) []string {
@@ -261,4 +287,25 @@ func platformNewline() string {
 	} else {
 		return "\n"
 	}
+}
+
+// mergeEnv Merges the current environment variables with the supplied ones, the
+// supplied ones take precedence
+func mergeEnv(vars map[string]string) map[string]string {
+	merged := make(map[string]string)
+
+	// Get Current environment vars
+	for _, env := range os.Environ() {
+		split := strings.Split(env, "=")
+
+		if len(split) == 2 {
+			merged[split[0]] = split[1]
+		}
+	}
+
+	for k, v := range vars {
+		merged[k] = v
+	}
+
+	return merged
 }

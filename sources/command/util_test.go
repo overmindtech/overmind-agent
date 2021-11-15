@@ -6,6 +6,7 @@ import (
 	"os"
 	"regexp"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -363,6 +364,10 @@ func TestUnmarshalJSON(t *testing.T) {
 
 func TestShellWrap(t *testing.T) {
 	t.Run("with basic command", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("skipping tests on windows")
+		}
+
 		command := "hostname"
 		args := []string{}
 
@@ -382,6 +387,10 @@ func TestShellWrap(t *testing.T) {
 	})
 
 	t.Run("with a file with spaces", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("skipping tests on windows")
+		}
+
 		command := "cat"
 		args := []string{"/home/dylan/my file.txt"}
 
@@ -399,4 +408,18 @@ func TestShellWrap(t *testing.T) {
 			t.Errorf("Expected wrapped command to be \"cat '/home/dylan/my file.txt'\", got %v", newArgs[1])
 		}
 	})
+}
+
+func TestPowershellWrap(t *testing.T) {
+	_, args, err := PowerShellWrap("Write-Host", []string{"Hello!"})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := regexp.MustCompile("Write-Host Hello!")
+
+	if !expected.MatchString(strings.Join(args, " ")) {
+		t.Fatal("Expected to match 'Write-Host Hello!'")
+	}
 }
