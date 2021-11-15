@@ -3,6 +3,7 @@ package command
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os/exec"
@@ -35,6 +36,12 @@ type CommandParams struct {
 	// Env specifies environment variables that should be set when running the
 	// command
 	Env map[string]string `json:"env"`
+
+	// STDIN Specifies the binary data that should be piped to the command as
+	// STDIN. This can be used for example to simulate user intaction for
+	// programs that read from STDIN. This will be encoded using base64 to a
+	// string in JSON
+	STDIN []byte `json:"stdin"`
 }
 
 // MarshalJSON Converts the object to JSON
@@ -44,18 +51,25 @@ func (cp CommandParams) MarshalJSON() ([]byte, error) {
 	type Alias CommandParams
 	return json.Marshal(&struct {
 		Timeout string `json:"timeout"`
+		STDIN   string `json:"stdin"`
 		*Alias
 	}{
 		Timeout: cp.Timeout.String(),
+		STDIN:   base64.StdEncoding.EncodeToString(cp.STDIN),
 		Alias:   (*Alias)(&cp),
 	})
 }
 
 // UnmarshalJSON Converts the object from JSON
 func (cp *CommandParams) UnmarshalJSON(data []byte) error {
+	var timeoutDuration time.Duration
+	var stdin []byte
+	var err error
+
 	type Alias CommandParams
 	aux := &struct {
 		Timeout string `json:"timeout"`
+		STDIN   string `json:"stdin"`
 		*Alias
 	}{
 		Alias: (*Alias)(cp),
@@ -68,12 +82,21 @@ func (cp *CommandParams) UnmarshalJSON(data []byte) error {
 	// Parse the `timeout` parameter using time.ParseDuration meaning that the
 	// duration should be in a human readable format e.g. "300ms", "-1.5h" or
 	// "2h45m". Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
-	timeoutDuration, err := time.ParseDuration(aux.Timeout)
+	timeoutDuration, err = time.ParseDuration(aux.Timeout)
 	if err != nil {
 		return err
 	}
 
 	cp.Timeout = timeoutDuration
+
+	// Decode the STDIN from base64 to bytes
+	stdin, err = base64.StdEncoding.DecodeString(aux.STDIN)
+
+	if err != nil {
+		return err
+	}
+
+	cp.STDIN = stdin
 	return nil
 }
 

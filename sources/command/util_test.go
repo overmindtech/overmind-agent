@@ -258,6 +258,7 @@ func TestRun(t *testing.T) {
 
 const jsonString = `{
 	"timeout": "500ms",
+	"stdin": "eWVzCmZvbyBiYXI=",
 	"command": "cat",
 	"args": [
 		"hosts"
@@ -278,6 +279,7 @@ var jsonObject = CommandParams{
 	Env: map[string]string{
 		"TEST": "foo",
 	},
+	STDIN: []byte{121, 101, 115, 10, 102, 111, 111, 32, 98, 97, 114},
 }
 
 func TestMarshalJSON(t *testing.T) {
@@ -329,5 +331,9 @@ func TestUnmarshalJSON(t *testing.T) {
 
 	if cp.Env["TEST"] != jsonObject.Env["TEST"] {
 		t.Errorf("Env[\"TEST\"] did not match, got %v, expected %v", cp.Env["TEST"], jsonObject.Env["TEST"])
+	}
+
+	if string(cp.STDIN) != "yes\nfoo bar" {
+		t.Errorf("Expected stdin to  be the string \"yes\\nfoo bar\", got %v", string(cp.STDIN))
 	}
 }
