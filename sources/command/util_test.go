@@ -371,16 +371,10 @@ func TestShellWrap(t *testing.T) {
 		command := "hostname"
 		args := []string{}
 
-		newCommand, newArgs, err := ShellWrap(command, args)
+		_, newArgs, err := ShellWrap(command, args)
 
 		if err != nil {
 			t.Fatal(err)
-		}
-
-		bash := regexp.MustCompile("/bin/bash")
-
-		if !bash.MatchString(newCommand) {
-			t.Errorf("Expected command to be /bin/bash, got %v", newCommand)
 		}
 
 		if newArgs[1] != "hostname" {
