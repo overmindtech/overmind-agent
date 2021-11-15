@@ -6,6 +6,7 @@ import (
 	"os"
 	"regexp"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -168,6 +169,23 @@ func TestRun(t *testing.T) {
 		})
 	})
 
+	t.Run("shell builtins should work", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("Not supported on windows")
+		}
+
+		params := CommandParams{
+			Command: "exit",
+			Args:    []string{"1"},
+		}
+
+		_, err := params.Run()
+
+		if err == nil {
+			t.Fatal("expected command to fail but didn't")
+		}
+	})
+
 	t.Run("stdout should work", func(t *testing.T) {
 		if runtime.GOOS == "windows" {
 			t.Skip("Not supported on windows")
@@ -258,6 +276,7 @@ func TestRun(t *testing.T) {
 
 const jsonString = `{
 	"timeout": "500ms",
+	"stdin": "eWVzCmZvbyBiYXI=",
 	"command": "cat",
 	"args": [
 		"hosts"
@@ -266,7 +285,8 @@ const jsonString = `{
 	"dir": "/etc",
 	"env": {
 		"TEST": "foo"
-	}
+	},
+	"run_as": "root"
 }`
 
 var jsonObject = CommandParams{
@@ -278,6 +298,8 @@ var jsonObject = CommandParams{
 	Env: map[string]string{
 		"TEST": "foo",
 	},
+	STDIN: []byte{121, 101, 115, 10, 102, 111, 111, 32, 98, 97, 114},
+	RunAs: "root",
 }
 
 func TestMarshalJSON(t *testing.T) {
@@ -329,5 +351,67 @@ func TestUnmarshalJSON(t *testing.T) {
 
 	if cp.Env["TEST"] != jsonObject.Env["TEST"] {
 		t.Errorf("Env[\"TEST\"] did not match, got %v, expected %v", cp.Env["TEST"], jsonObject.Env["TEST"])
+	}
+
+	if string(cp.STDIN) != "yes\nfoo bar" {
+		t.Errorf("Expected stdin to  be the string \"yes\\nfoo bar\", got %v", string(cp.STDIN))
+	}
+
+	if cp.RunAs != "root" {
+		t.Errorf("Expected RunAs to be root, got %v", cp.RunAs)
+	}
+}
+
+func TestShellWrap(t *testing.T) {
+	t.Run("with basic command", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("skipping tests on windows")
+		}
+
+		command := "hostname"
+		args := []string{}
+
+		_, newArgs, err := ShellWrap(command, args)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if newArgs[1] != "hostname" {
+			t.Errorf("Expected wrapped command to be hostname, got %v", newArgs[1])
+		}
+	})
+
+	t.Run("with a file with spaces", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("skipping tests on windows")
+		}
+
+		command := "cat"
+		args := []string{"/home/dylan/my file.txt"}
+
+		_, newArgs, err := ShellWrap(command, args)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if newArgs[1] != "cat '/home/dylan/my file.txt'" {
+			t.Errorf("Expected wrapped command to be \"cat '/home/dylan/my file.txt'\", got %v", newArgs[1])
+		}
+	})
+}
+
+func TestPowershellWrap(t *testing.T) {
+	_, args, err := PowerShellWrap("Write-Host", []string{"Hello!"})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := regexp.MustCompile("Write-Host Hello!")
+
+	if !expected.MatchString(strings.Join(args, " ")) {
+		t.Fatal("Expected to match 'Write-Host Hello!'")
 	}
 }

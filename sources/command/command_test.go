@@ -1,9 +1,11 @@
 package command
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"regexp"
+	"runtime"
 	"testing"
 
 	"github.com/overmindtech/discovery"
@@ -43,6 +45,65 @@ func TestGet(t *testing.T) {
 		})
 	} else {
 		t.Skip("Skiping test as cat binary not present")
+	}
+}
+
+func TestGetPowershell(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Run("Running built in powershell cmdlets", func(t *testing.T) {
+			s := CommandSource{}
+
+			item, err := s.Get(util.LocalContext, "Write-Host qwerty")
+
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var stdout interface{}
+
+			stdout, err = item.Attributes.Get("stdout")
+
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if stdout != "qwerty\n" {
+				t.Errorf("Expected stdout to be 'qwerty', got %v", stdout)
+			}
+		})
+
+		t.Run("Running multiline powershell scripts", func(t *testing.T) {
+			s := CommandSource{}
+
+			script := `
+			Get-CimInstance -ClassName Win32_LocalTime
+			Get-CimInstance -ClassName Win32_ComputerSystem
+			`
+
+			item, err := s.Get(util.LocalContext, script)
+
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var stdout interface{}
+
+			stdout, err = item.Attributes.Get("stdout")
+
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			computerSystemRegex := regexp.MustCompile("TotalPhysicalMemory")
+			localTimeRegex := regexp.MustCompile("WeekInMonth")
+			stdoutString := fmt.Sprint(stdout)
+
+			if !(computerSystemRegex.MatchString(stdoutString) && localTimeRegex.MatchString(stdoutString)) {
+				t.Errorf("Unexpected result:\r\n%v", stdout)
+			}
+		})
+	} else {
+		t.Skip("Powershell tests only run on windows")
 	}
 }
 
