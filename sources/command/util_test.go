@@ -379,7 +379,7 @@ func TestShellWrap(t *testing.T) {
 
 		bash := regexp.MustCompile("/bin/bash")
 
-		if bash.MatchString(newCommand) {
+		if !bash.MatchString(newCommand) {
 			t.Errorf("Expected command to be /bin/bash, got %v", newCommand)
 		}
 
