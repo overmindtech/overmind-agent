@@ -101,8 +101,8 @@ Vagrant.configure("2") do |config|
 
       refreshenv
 
-      git config --global user.name \"#{`git config --global user.name`}\"
-      git config --global user.email #{`git config --global user.email`}
+      & 'C:/Program Files/Git/bin/git.exe' config --global user.name \"#{`git config --global user.name`}\"
+      & 'C:/Program Files/Git/bin/git.exe' config --global user.email #{`git config --global user.email`}
     SHELL
   end
 
