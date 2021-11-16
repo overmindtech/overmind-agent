@@ -15,47 +15,7 @@ Vagrant.configure("2") do |config|
   # Get the Go version from the current directory and mirror this
   go_version = `go version`.match(/go version\s(\S*)/)[1]
 
-  config.vm.provider "virtualbox" do |v|
-      v.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
-      v.memory = 1024
-      v.cpus = 2
-  end
-
-  config.vm.define "centos" do |centos|
-    centos.vm.box = "generic/centos8"
-    centos.vm.network "private_network", ip: "192.168.158.10"
-
-    centos.vm.provision "shell", inline: <<-SHELL
-      # Patch
-      yum update -y
-
-      # Add Puppet repos
-      sudo rpm -Uvh https://yum.puppet.com/puppet6-release-el-8.noarch.rpm
-
-      # Install git dependencies
-      yum install git puppet-agent epel-release net-tools -y
-    SHELL
-  end
-
-  config.vm.define "ubuntu" do |ubuntu|
-    ubuntu.vm.box = "generic/ubuntu2004"
-    ubuntu.vm.network "private_network", ip: "192.168.158.11"
-
-    ubuntu.vm.provision "shell", inline: <<-SHELL
-      # Add Puppet repos
-      wget https://apt.puppetlabs.com/puppet6-release-bionic.deb
-      dpkg -i puppet6-release-bionic.deb
-      apt update
-
-      # Patch
-      apt-get upgrade -y
-
-      # Install git dependencies
-      apt-get install git puppet-agent -y
-    SHELL
-  end
-
-  config.vm.provision "shell", inline: <<-SHELL
+  linux_provision = <<-SHELL
     # Install git
     if [ -n "$(command -v yum)" ]
     then
@@ -96,4 +56,79 @@ Vagrant.configure("2") do |config|
     # Add hosts entry for NATS debug server
     echo "10.0.2.2 nats.debug" >> /etc/hosts
   SHELL
+
+  config.vm.provider "virtualbox" do |v|
+      v.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+      v.memory = 1024
+      v.cpus = 2
+  end
+
+  config.vm.provider "virtualbox" do |v|
+      v.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+      v.memory = 1024
+      v.cpus = 2
+      v.gui = false
+  end
+
+  config.vm.define "centos" do |centos|
+    centos.vm.box = "generic/centos8"
+    #centos.vm.network "private_network", ip: "192.168.158.10"
+
+    centos.vm.provision "shell", inline: <<-SHELL
+      # Patch
+      yum update -y
+
+      # Add Puppet repos
+      sudo rpm -Uvh https://yum.puppet.com/puppet6-release-el-8.noarch.rpm
+
+      # Install git dependencies
+      yum install git puppet-agent epel-release net-tools -y
+    SHELL
+
+    centos.vm.provision "shell", inline: linux_provision
+  end
+
+  config.vm.define "windows" do |windows|
+    windows.vm.box = "peru/windows-server-2019-standard-x64-eval"
+
+    windows.vm.provider "virtualbox" do |v|
+      v.memory = 6144
+      v.cpus = 6
+    end
+
+    windows.vm.provision "shell", inline: <<-SHELL
+      # Install chocolatey
+      Set-ExecutionPolicy Bypass -Scope Process -Force
+      [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+      iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+      # Install required software
+      choco install git golang -y
+
+      refreshenv
+
+      git config --global user.name \"#{`git config --global user.name`}\"
+      git config --global user.email #{`git config --global user.email`}
+    SHELL
+  end
+
+  config.vm.define "ubuntu" do |ubuntu|
+    ubuntu.vm.box = "generic/ubuntu2004"
+    #ubuntu.vm.network "private_network", ip: "192.168.158.11"
+
+    ubuntu.vm.provision "shell", inline: <<-SHELL
+      # Add Puppet repos
+      wget https://apt.puppetlabs.com/puppet6-release-bionic.deb
+      dpkg -i puppet6-release-bionic.deb
+      apt update
+
+      # Patch
+      apt-get upgrade -y
+
+      # Install git dependencies
+      apt-get install git puppet-agent -y
+    SHELL
+  
+    ubuntu.vm.provision "shell", inline: linux_provision
+  end
 end
