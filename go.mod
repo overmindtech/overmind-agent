@@ -4,11 +4,10 @@ go 1.17
 
 // Direct dependencies
 require (
-	github.com/alessio/shellescape v1.4.1
 	github.com/cakturk/go-netstat v0.0.0-20200220111822-e5b49efee7a5
 	github.com/coreos/go-systemd/v22 v22.3.2
 	github.com/elastic/go-sysinfo v1.7.1
-	github.com/overmindtech/discovery v0.4.0
+	github.com/overmindtech/discovery v0.4.2
 	github.com/overmindtech/sdp-go v0.2.1
 	github.com/shirou/gopsutil v3.21.10+incompatible
 	github.com/sirupsen/logrus v1.8.1
@@ -36,7 +35,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/mapstructure v1.4.2 // indirect
 	github.com/nats-io/jwt/v2 v2.2.0 // indirect
-	github.com/nats-io/nats.go v1.13.0 // indirect
+	github.com/nats-io/nats.go v1.13.1-0.20211018182449-f2416a8b1483 // indirect
 	github.com/nats-io/nkeys v0.3.0 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/overmindtech/sdpcache v0.1.4 // indirect
@@ -49,8 +48,8 @@ require (
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.9 // indirect
 	github.com/tklauser/numcpus v0.3.0 // indirect
-	golang.org/x/crypto v0.0.0-20211115234514-b4de73f9ece8 // indirect
-	golang.org/x/sys v0.0.0-20211116061358-0a5406a5449c // indirect
+	golang.org/x/crypto v0.0.0-20211117183948-ae814b36b871 // indirect
+	golang.org/x/sys v0.0.0-20211117180635-dee7805ff2e1 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect

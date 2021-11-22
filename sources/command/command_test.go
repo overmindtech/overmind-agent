@@ -115,8 +115,7 @@ func TestSearch(t *testing.T) {
 
 		if _, err := os.Stat("/etc/hosts"); err == nil {
 			query := `{
-				"command": "cat",
-				"args": ["hosts"],
+				"command": "cat hosts",
 				"expected_exit": 0,
 				"timeout": "5s",
 				"dir": "/etc",
@@ -196,8 +195,7 @@ func TestSearch(t *testing.T) {
 
 		if _, err := exec.LookPath("sleep"); err == nil {
 			query := `{
-				"command": "sleep",
-				"args": ["60"],
+				"command": "sleep 60",
 				"expected_exit": 0,
 				"timeout": "100ms"
 			}`
