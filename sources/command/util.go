@@ -109,6 +109,7 @@ func (cp *CommandParams) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// Run Runs the command and returns an item and error
 func (cp *CommandParams) Run() (*sdp.Item, error) {
 	if cp.Timeout == 0 {
 		// Use default timeout if none was specified
