@@ -3,7 +3,6 @@ package command
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/overmindtech/overmind-agent/sources/util"
@@ -55,19 +54,8 @@ func (s *CommandSource) Get(itemContext string, query string) (*sdp.Item, error)
 		}
 	}
 
-	splitQuery := strings.Split(query, " ")
-
-	commandName := splitQuery[0]
-	args := make([]string, len(splitQuery)-1)
-
-	// Loop over the remaining arguments and copy into new slice
-	for i := 1; i != len(splitQuery); i++ {
-		args[i-1] = splitQuery[i]
-	}
-
 	params := CommandParams{
-		Command: commandName,
-		Args:    args,
+		Command: query,
 	}
 
 	return params.Run()
@@ -78,8 +66,7 @@ func (s *CommandSource) Get(itemContext string, query string) (*sdp.Item, error)
 // `CommandParams` struct e.g.
 //
 // {
-//     "command": "cat",
-//     "args": ["/etc/hosts"],
+//     "command": "cat /etc/hosts",
 //     "expected_exit": 0,
 //     "timeout": "5s",
 //     "dir": "/etc",

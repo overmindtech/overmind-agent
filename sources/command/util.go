@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"runtime"
@@ -15,18 +16,13 @@ import (
 
 	"github.com/overmindtech/overmind-agent/sources/util"
 	"github.com/overmindtech/sdp-go"
-
-	"github.com/alessio/shellescape"
 )
 
 const DefaultTimeout = 10 * time.Second
 
 type CommandParams struct {
-	// Command specifies the command to run
+	// Command specifies the command to run, including all arguments
 	Command string `json:"command"`
-
-	// Args specifies to pass to the command
-	Args []string `json:"args"`
 
 	// ExpectedExit is the expected exit code (usually 0)
 	ExpectedExit int `json:"expected_exit"`
@@ -46,9 +42,15 @@ type CommandParams struct {
 	// programs that read from STDIN. This will be encoded using base64 to a
 	// string in JSON
 	STDIN []byte `json:"stdin"`
+}
 
-	// RunAs specifies the user that the command should be run as
-	RunAs string `json:"run_as"`
+type UserInfo struct {
+	// Username The user to run the command as
+	Username string `json:"username"`
+	// Password (optional) The password required for that user. On linux this is the
+	// password that will be provided to sudo, in wondows this is the
+	// password of the user themselves
+	Password string `json:"password,omitempty"`
 }
 
 // MarshalJSON Converts the object to JSON
@@ -120,10 +122,12 @@ func (cp *CommandParams) Run() (*sdp.Item, error) {
 	var args []string
 	var err error
 
-	if runtime.GOOS == "windows" {
-		commandString, args, err = PowerShellWrap(cp.Command, cp.Args)
-	} else {
-		commandString, args, err = ShellWrap(cp.Command, cp.Args)
+	// Wrap in a shell
+	switch runtime.GOOS {
+	case "windows":
+		commandString, args, err = cp.PowerShellWrap()
+	default:
+		commandString, args, err = cp.ShellWrap()
 	}
 
 	if err != nil {
@@ -138,13 +142,37 @@ func (cp *CommandParams) Run() (*sdp.Item, error) {
 
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
+	var stdinPipe io.WriteCloser
 
-	command.Stdout = &stdout
+	stdinPipe, err = command.StdinPipe()
+
+	if err != nil {
+		return nil, &sdp.ItemRequestError{
+			ErrorType:   sdp.ItemRequestError_OTHER,
+			ErrorString: err.Error(),
+			Context:     util.LocalContext,
+		}
+	}
+
 	command.Stderr = &stderr
+	command.Stdout = &stdout
 	command.Dir = cp.Dir
 	command.Env = envToString(mergeEnv(cp.Env))
 
-	err = command.Run()
+	// Start the command
+	if err := command.Start(); err != nil {
+		return nil, &sdp.ItemRequestError{
+			ErrorType:   sdp.ItemRequestError_OTHER,
+			ErrorString: err.Error(),
+			Context:     util.LocalContext,
+		}
+	}
+
+	// Start reading/writing
+	go stdinPipe.Write(cp.STDIN)
+
+	// Wait for the command to finish
+	err = command.Wait()
 
 	if err != nil {
 		// This will return an error if the context has ended
@@ -178,7 +206,6 @@ func (cp *CommandParams) Run() (*sdp.Item, error) {
 
 	attributes, err = sdp.ToAttributes(map[string]interface{}{
 		"name":     cp.Command,
-		"args":     cp.Args,
 		"exitCode": command.ProcessState.ExitCode(),
 		"stdout":   strings.TrimSuffix(stdout.String(), platformNewline()),
 		"stderr":   strings.TrimSuffix(stderr.String(), platformNewline()),
@@ -213,59 +240,37 @@ func (cp *CommandParams) Run() (*sdp.Item, error) {
 // ShellWrap Wraps a given command and args in the required arguments so that
 // the command runs inside a shell, the default being bash, but falling back to
 // sh if bash is not available
-func ShellWrap(command string, args []string) (string, []string, error) {
-	var shell string
+func (cp *CommandParams) ShellWrap() (string, []string, error) {
+	all := make([]string, 0)
 
 	// Get the full path to the shell, bash or sh
 	if bashPath, err := exec.LookPath("bash"); err == nil {
-		shell = bashPath
+		all = append(all, bashPath)
 	} else if shPath, err := exec.LookPath("sh"); err == nil {
-		shell = shPath
+		all = append(all, shPath)
 	} else {
 		return "", []string{}, errors.New("could not find bash or sh on the PATH")
 	}
 
-	// Join the command and args into a single array
-	joined := []string{command}
-	joined = append(joined, args...)
+	all = append(all, []string{"-c", cp.Command}...)
 
-	// Escape this so that it can be passed as a single thing
-	escaped := shellescape.QuoteCommand(joined)
-
-	// Create the arguments which are basically /bin/bash -c {your stuff here}
-	args = []string{"-c", escaped}
-
-	return shell, args, nil
+	return all[0], all[1:], nil
 }
 
 // PowerShellWrap Wraps a given command and args in the required arguments so
 // that the command runs inside powershell
-func PowerShellWrap(command string, args []string) (string, []string, error) {
-	// Encode the original command as base64
-	powershellArray := []string{command}
-	powershellArray = append(powershellArray, args...)
-
-	// Append deliberate exit to ensure that the powershell.exe process exits
-	// with a code other than 1
-	powershellArray = append(powershellArray, "; exit $LASTEXITCODE")
-	powershellCommand := strings.Join(powershellArray, " ")
-
+func (cp *CommandParams) PowerShellWrap() (string, []string, error) {
 	powershellArgs := []string{
+		"powershell.exe",
 		"-NoLogo",          // Hides the copyright banner at startup
 		"-NoProfile",       // Does not load the Windows PowerShell profile
 		"-NonInteractive",  // Does not present an interactive prompt to the user
 		"-ExecutionPolicy", // Allow running of unsigned code
 		"bypass",
-		powershellCommand,
+		cp.Command + "; exit $LASTEXITCODE",
 	}
 
-	// TODO: The stuff that I'm doing hwere means that the actual powershell
-	// process will exit with 1 if the command fails, regardless of the exit
-	// code of the command itself. I need to find some way to pass this though.
-	// Read this:
-	// https://stackoverflow.com/questions/50200325/returning-an-exit-code-from-a-powershell-script
-
-	return "powershell.exe", powershellArgs, nil
+	return powershellArgs[0], powershellArgs[1:], nil
 }
 
 // envToString Converts a map of environment variables to an array of equals

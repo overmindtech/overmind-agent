@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path"
 	"regexp"
 	"runtime"
 	"strings"
@@ -15,25 +16,12 @@ import (
 
 // sleepCMD Returns a command and args that sleeps for a given period, depending
 // on the GOOS
-func sleepCMD(seconds int) (string, []string) {
-	var command string
-	var args []string
-
+func sleepCMD(seconds int) string {
 	if runtime.GOOS == "windows" {
-		command = "ping"
-		args = []string{
-			"127.0.0.1",
-			"-n",
-			fmt.Sprint(seconds + 1),
-		}
-	} else {
-		command = "sleep"
-		args = []string{
-			fmt.Sprint(seconds),
-		}
+		return fmt.Sprintf("ping 127.0.0.1 -n %v", seconds+1)
 	}
 
-	return command, args
+	return fmt.Sprintf("sleep %v", seconds)
 }
 
 func TestRun(t *testing.T) {
@@ -96,11 +84,10 @@ func TestRun(t *testing.T) {
 
 	t.Run("with timeout", func(t *testing.T) {
 		t.Run("returning before the timeout", func(t *testing.T) {
-			command, args := sleepCMD(1)
+			command := sleepCMD(1)
 
 			params := CommandParams{
 				Command: command,
-				Args:    args,
 				Timeout: 2 * time.Second,
 			}
 
@@ -114,12 +101,11 @@ func TestRun(t *testing.T) {
 		})
 
 		t.Run("timing out", func(t *testing.T) {
-			command, args := sleepCMD(10)
+			command := sleepCMD(10)
 			timeoutrror := regexp.MustCompile("timed out")
 
 			params := CommandParams{
 				Command: command,
-				Args:    args,
 				Timeout: 500 * time.Millisecond,
 			}
 
@@ -135,15 +121,14 @@ func TestRun(t *testing.T) {
 		var command string
 
 		if runtime.GOOS == "windows" {
-			command = "ping"
+			command = "ping somethingNotReal"
 		} else {
-			command = "cat"
+			command = "cat somethingNotReal"
 		}
 
 		t.Run("an unexpected non-zero exit should fail", func(t *testing.T) {
 			params := CommandParams{
 				Command:      command,
-				Args:         []string{"somethingNotReal"},
 				ExpectedExit: 0,
 			}
 
@@ -157,7 +142,6 @@ func TestRun(t *testing.T) {
 		t.Run("an expected non-zero exit should pass", func(t *testing.T) {
 			params := CommandParams{
 				Command:      command,
-				Args:         []string{"somethingNotReal"},
 				ExpectedExit: 1,
 			}
 
@@ -175,8 +159,7 @@ func TestRun(t *testing.T) {
 		}
 
 		params := CommandParams{
-			Command: "exit",
-			Args:    []string{"1"},
+			Command: "exit 1",
 		}
 
 		_, err := params.Run()
@@ -192,8 +175,7 @@ func TestRun(t *testing.T) {
 		}
 
 		params := CommandParams{
-			Command: "echo",
-			Args:    []string{"qwerty"},
+			Command: "echo qwerty",
 		}
 
 		item, err := params.Run()
@@ -213,11 +195,7 @@ func TestRun(t *testing.T) {
 		}
 
 		params := CommandParams{
-			Command: "perl",
-			Args: []string{
-				"-e",
-				"print STDERR qwerty",
-			},
+			Command: "perl -e 'print STDERR qwerty'",
 		}
 
 		item, err := params.Run()
@@ -277,21 +255,16 @@ func TestRun(t *testing.T) {
 const jsonString = `{
 	"timeout": "500ms",
 	"stdin": "eWVzCmZvbyBiYXI=",
-	"command": "cat",
-	"args": [
-		"hosts"
-	],
+	"command": "cat hosts",
 	"expected_exit": 0,
 	"dir": "/etc",
 	"env": {
 		"TEST": "foo"
-	},
-	"run_as": "root"
+	}
 }`
 
 var jsonObject = CommandParams{
-	Command:      "cat",
-	Args:         []string{"hosts"},
+	Command:      "cat hosts",
 	ExpectedExit: 0,
 	Timeout:      500 * time.Millisecond,
 	Dir:          "/etc",
@@ -299,7 +272,6 @@ var jsonObject = CommandParams{
 		"TEST": "foo",
 	},
 	STDIN: []byte{121, 101, 115, 10, 102, 111, 111, 32, 98, 97, 114},
-	RunAs: "root",
 }
 
 func TestMarshalJSON(t *testing.T) {
@@ -341,10 +313,6 @@ func TestUnmarshalJSON(t *testing.T) {
 		t.Errorf("ExpectedExit did not match, got %v, expected %v", cp.ExpectedExit, jsonObject.ExpectedExit)
 	}
 
-	if cp.Args[0] != jsonObject.Args[0] {
-		t.Errorf("Args[0] did not match, got %v, expected %v", cp.Args[0], jsonObject.Args[0])
-	}
-
 	if cp.Timeout.String() != jsonObject.Timeout.String() {
 		t.Errorf("Timeout.String() did not match, got %v, expected %v", cp.Timeout.String(), jsonObject.Timeout.String())
 	}
@@ -356,10 +324,6 @@ func TestUnmarshalJSON(t *testing.T) {
 	if string(cp.STDIN) != "yes\nfoo bar" {
 		t.Errorf("Expected stdin to  be the string \"yes\\nfoo bar\", got %v", string(cp.STDIN))
 	}
-
-	if cp.RunAs != "root" {
-		t.Errorf("Expected RunAs to be root, got %v", cp.RunAs)
-	}
 }
 
 func TestShellWrap(t *testing.T) {
@@ -368,10 +332,11 @@ func TestShellWrap(t *testing.T) {
 			t.Skip("skipping tests on windows")
 		}
 
-		command := "hostname"
-		args := []string{}
+		cp := CommandParams{
+			Command: "hostname",
+		}
 
-		_, newArgs, err := ShellWrap(command, args)
+		_, newArgs, err := cp.ShellWrap()
 
 		if err != nil {
 			t.Fatal(err)
@@ -387,10 +352,11 @@ func TestShellWrap(t *testing.T) {
 			t.Skip("skipping tests on windows")
 		}
 
-		command := "cat"
-		args := []string{"/home/dylan/my file.txt"}
+		cp := CommandParams{
+			Command: "cat '/home/dylan/my file.txt'",
+		}
 
-		_, newArgs, err := ShellWrap(command, args)
+		_, newArgs, err := cp.ShellWrap()
 
 		if err != nil {
 			t.Fatal(err)
@@ -403,15 +369,139 @@ func TestShellWrap(t *testing.T) {
 }
 
 func TestPowershellWrap(t *testing.T) {
-	_, args, err := PowerShellWrap("Write-Host", []string{"Hello!"})
+	t.Run("simple command", func(t *testing.T) {
+		cp := CommandParams{
+			Command: `Write-Host Hello!`,
+		}
+		_, args, err := cp.PowerShellWrap()
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := regexp.MustCompile("Write-Host Hello!")
+
+		if !expected.MatchString(strings.Join(args, " ")) {
+			t.Fatal("Expected to match 'Write-Host Hello!'")
+		}
+	})
+}
+
+func TestRunComplex(t *testing.T) {
+	t.Run("exit code logic", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("bash not supproted on windows")
+		}
+
+		// In here I want to be testing complex stuff like if someone wanted pass a
+		// whole shell script with logic, or even just a command that did something
+		// based on the exit of something else using %% of || or something
+		cp := CommandParams{
+			Command: `[ -f /etc/foobar ] && echo "exists" || echo "does not exist"`,
+		}
+
+		item, err := cp.Run()
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if out, _ := item.Attributes.Get("stdout"); out != "does not exist" {
+			t.Errorf("expected stdout to be 'does not exist', got %v", out)
+		}
+	})
+
+	t.Run("full script", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("bash not supproted on windows")
+		}
+
+		_, filename, _, _ := runtime.Caller(0)
+		scriptPath := path.Join(path.Dir(filename), "test/line_count.bash")
+		content, err := os.ReadFile(scriptPath)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		cp := CommandParams{
+			Command: string(content),
+		}
+
+		item, err := cp.Run()
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := regexp.MustCompile(`\/etc\/passwd:\s+\d+`)
+		stdout := fmt.Sprint(item.Attributes.Get("stdout"))
+
+		if !expected.MatchString(stdout) {
+			t.Errorf("expected stdout to match %v, got %v", expected, stdout)
+		}
+	})
+}
+
+func TestRunComplexPowershell(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("non-windows not supproted")
+	}
+
+	_, filename, _, _ := runtime.Caller(0)
+	scriptPath := path.Join(path.Dir(filename), "test/info.ps1")
+	content, err := os.ReadFile(scriptPath)
 
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	expected := regexp.MustCompile("Write-Host Hello!")
-
-	if !expected.MatchString(strings.Join(args, " ")) {
-		t.Fatal("Expected to match 'Write-Host Hello!'")
+	cp := CommandParams{
+		Command: string(content),
 	}
+
+	_, err = cp.Run()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestSTDIN(t *testing.T) {
+	t.Run("unix", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("bash not supproted on windows")
+		}
+
+		_, filename, _, _ := runtime.Caller(0)
+		scriptPath := path.Join(path.Dir(filename), "test/password_prompt.bash")
+		content, err := os.ReadFile(scriptPath)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		cp := CommandParams{
+			Command: string(content),
+			STDIN:   []byte("testing\n"),
+			Timeout: 5 * time.Second,
+		}
+
+		item, err := cp.Run()
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		discovery.TestValidateItem(t, item)
+
+		if stdout, err := item.Attributes.Get("stdout"); err == nil {
+			if match, err := regexp.MatchString("testing", fmt.Sprint(stdout)); !match || err != nil {
+				t.Errorf("Expected stdout to be \"testing\", got \"%v\"\nError: %v", stdout, err)
+			}
+		} else {
+			t.Error(err)
+		}
+
+	})
 }

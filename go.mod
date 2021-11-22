@@ -4,7 +4,6 @@ go 1.17
 
 // Direct dependencies
 require (
-	github.com/alessio/shellescape v1.4.1
 	github.com/cakturk/go-netstat v0.0.0-20200220111822-e5b49efee7a5
 	github.com/coreos/go-systemd/v22 v22.3.2
 	github.com/elastic/go-sysinfo v1.7.1
