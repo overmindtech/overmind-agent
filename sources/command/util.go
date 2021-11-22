@@ -225,14 +225,6 @@ func (cp *CommandParams) Run() (*sdp.Item, error) {
 		UniqueAttribute: "name",
 		Context:         util.LocalContext,
 		Attributes:      attributes,
-		LinkedItemRequests: []*sdp.ItemRequest{
-			{
-				Type:    "file",
-				Method:  sdp.RequestMethod_GET,
-				Query:   cp.Command,
-				Context: util.LocalContext,
-			},
-		},
 	}
 
 	return &item, nil
