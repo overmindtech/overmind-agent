@@ -1,6 +1,7 @@
 package dpkg
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -24,7 +25,7 @@ func TestShowAll(t *testing.T) {
 		t.Skip("dpkg-query not present, skipping tests")
 	}
 
-	ps, err := ShowAll()
+	ps, err := ShowAll(context.Background())
 
 	if err != nil {
 		t.Fatal(err)
@@ -49,7 +50,7 @@ func TestShowAll(t *testing.T) {
 	for _, pkgName := range lines {
 		t.Run(pkgName, func(t *testing.T) {
 			if pkgName != "" {
-				_, err := Show(pkgName)
+				_, err := Show(context.Background(), pkgName)
 
 				if err != nil {
 					t.Fatal(err)
@@ -69,11 +70,11 @@ func TestShow(t *testing.T) {
 	}
 
 	// Get a package for testing
-	ps, _ := ShowAll()
+	ps, _ := ShowAll(context.Background())
 
 	packageName := ps[len(ps)-1].Name
 
-	p, err := Show(packageName)
+	p, err := Show(context.Background(), packageName)
 
 	if err != nil {
 		t.Fatal(err)
@@ -128,7 +129,7 @@ func TestEmptyShow(t *testing.T) {
 	}
 
 	// Get a package for testing
-	_, err := Show("thisShouldNotExist")
+	_, err := Show(context.Background(), "thisShouldNotExist")
 
 	_, ok := err.(NotFoundError)
 
@@ -147,7 +148,7 @@ func TestSearch(t *testing.T) {
 	}
 
 	// Test a query that should work
-	packages, err := Search("/bin/bash")
+	packages, err := Search(context.Background(), "/bin/bash")
 
 	if err != nil {
 		t.Fatalf("Error getting what provides bash: %v", err)
@@ -164,14 +165,14 @@ func TestSearch(t *testing.T) {
 	}
 
 	// Test a query that shouldn't work
-	_, err = Search("notarealcommand")
+	_, err = Search(context.Background(), "notarealcommand")
 
 	if _, ok := err.(NotFoundError); ok == false {
 		t.Fatalf("Expected NotFoundError, got %T: %v", err, err)
 	}
 
 	// Test a bad query
-	_, err = Search("/var/foo/bad/path.txt")
+	_, err = Search(context.Background(), "/var/foo/bad/path.txt")
 
 	if err == nil {
 		t.Fatal("Found no error with bad query")

@@ -1,12 +1,14 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"regexp"
 	"runtime"
 	"testing"
+	"time"
 
 	"github.com/overmindtech/discovery"
 	"github.com/overmindtech/overmind-agent/sources/util"
@@ -20,7 +22,7 @@ func TestGet(t *testing.T) {
 			if _, err := os.Stat("/etc/hosts"); err == nil {
 				s := CommandSource{}
 
-				item, err := s.Get(util.LocalContext, "cat /etc/hosts")
+				item, err := s.Get(context.Background(), util.LocalContext, "cat /etc/hosts")
 
 				if err != nil {
 					t.Fatal(err)
@@ -37,7 +39,7 @@ func TestGet(t *testing.T) {
 
 			s := CommandSource{}
 
-			_, err := s.Get(util.LocalContext, "cat something doesn't exist")
+			_, err := s.Get(context.Background(), util.LocalContext, "cat something doesn't exist")
 
 			if err == nil {
 				t.Fatal("expected error but got <nil>")
@@ -53,7 +55,7 @@ func TestGetPowershell(t *testing.T) {
 		t.Run("Running built in powershell cmdlets", func(t *testing.T) {
 			s := CommandSource{}
 
-			item, err := s.Get(util.LocalContext, "Write-Host qwerty")
+			item, err := s.Get(context.Background(), util.LocalContext, "Write-Host qwerty")
 
 			if err != nil {
 				t.Fatal(err)
@@ -80,7 +82,7 @@ func TestGetPowershell(t *testing.T) {
 			Get-CimInstance -ClassName Win32_ComputerSystem
 			`
 
-			item, err := s.Get(util.LocalContext, script)
+			item, err := s.Get(context.Background(), util.LocalContext, script)
 
 			if err != nil {
 				t.Fatal(err)
@@ -117,14 +119,13 @@ func TestSearch(t *testing.T) {
 			query := `{
 				"command": "cat hosts",
 				"expected_exit": 0,
-				"timeout": "5s",
 				"dir": "/etc",
 				"env": {
 					"FOO": "BAR"
 				}
 			}`
 
-			items, err := s.Search(util.LocalContext, query)
+			items, err := s.Search(context.Background(), util.LocalContext, query)
 
 			if err != nil {
 				t.Fatal(err)
@@ -143,14 +144,13 @@ func TestSearch(t *testing.T) {
 			"command": "cat",
 			"args": ["hosts"]
 			"expected_exit": 0
-			"timeout": "5s"
 			"dir": "/etc"
 			"env": {
 				"FOO": "BAR"
 			}
 		}`
 
-		_, err := s.Search(util.LocalContext, query)
+		_, err := s.Search(context.Background(), util.LocalContext, query)
 
 		if err == nil {
 			t.Fatal("expected error but got <nil>")
@@ -170,14 +170,13 @@ func TestSearch(t *testing.T) {
 			"command": "cat",
 			"args": ["hosts"],
 			"expected_exit": 0,
-			"timeout": "5s",
 			"dir": "/etc",
 			"env": {
 				"FOO": 12
 			}
 		}`
 
-		_, err := s.Search(util.LocalContext, query)
+		_, err := s.Search(context.Background(), util.LocalContext, query)
 
 		if err == nil {
 			t.Fatal("expected error but got <nil>")
@@ -196,11 +195,13 @@ func TestSearch(t *testing.T) {
 		if _, err := exec.LookPath("sleep"); err == nil {
 			query := `{
 				"command": "sleep 60",
-				"expected_exit": 0,
-				"timeout": "100ms"
+				"expected_exit": 0
 			}`
 
-			_, err := s.Search(util.LocalContext, query)
+			ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+			defer cancel()
+
+			_, err := s.Search(ctx, util.LocalContext, query)
 
 			if err == nil {
 				t.Fatal("expected error but got <nil>")
@@ -222,7 +223,7 @@ func TestFind(t *testing.T) {
 
 	s := CommandSource{}
 
-	_, err := s.Find(util.LocalContext)
+	_, err := s.Find(context.Background(), util.LocalContext)
 
 	if err == nil {
 		t.Fatal("expected error but got <nil>")

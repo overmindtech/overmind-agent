@@ -21,9 +21,9 @@ type MountsSource struct {
 }
 
 // Scanner Executes the MountFunction and returns the scanner
-func (s *MountsSource) Scanner() (*bufio.Scanner, error) {
+func (s *MountsSource) Scanner(ctx context.Context) (*bufio.Scanner, error) {
 	if s.MountFunction == nil {
-		return mountCMD()
+		return mountCMD(ctx)
 	}
 
 	return s.MountFunction()
@@ -69,7 +69,7 @@ func (s *MountsSource) Contexts() []string {
 // must return an item whose UniqueAttribute value exactly matches the supplied
 // parameter. If the item cannot be found it should return an ItemNotFoundError
 // (Required)
-func (s *MountsSource) Get(itemContext string, query string) (*sdp.Item, error) {
+func (s *MountsSource) Get(ctx context.Context, itemContext string, query string) (*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
@@ -82,13 +82,13 @@ func (s *MountsSource) Get(itemContext string, query string) (*sdp.Item, error) 
 	var scanner *bufio.Scanner
 	var err error
 
-	scanner, err = s.Scanner()
+	scanner, err = s.Scanner(ctx)
 
 	if err != nil {
 		return nil, err
 	}
 
-	MountParser.WithParsedResults(scanner, func(m map[string]string) bool {
+	MountParser.WithParsedResults(ctx, scanner, func(m map[string]string) bool {
 		if m["path"] == query {
 			item = mountMatchToItem(m)
 			return false
@@ -110,13 +110,13 @@ func (s *MountsSource) Get(itemContext string, query string) (*sdp.Item, error) 
 
 // Find Gets information about all item that the source can possibly find. If
 // nothing is found then just return an empty list (Required)
-func (s *MountsSource) Find(itemContext string) ([]*sdp.Item, error) {
-	return s.Search(itemContext, "*")
+func (s *MountsSource) Find(ctx context.Context, itemContext string) ([]*sdp.Item, error) {
+	return s.Search(ctx, itemContext, "*")
 }
 
 // Search Searches by path or device (exact match). A "*" can also be passed
 // which will return all items
-func (s *MountsSource) Search(itemContext string, query string) ([]*sdp.Item, error) {
+func (s *MountsSource) Search(ctx context.Context, itemContext string, query string) ([]*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
@@ -129,13 +129,13 @@ func (s *MountsSource) Search(itemContext string, query string) ([]*sdp.Item, er
 
 	results := make([]*sdp.Item, 0)
 
-	scanner, err := s.Scanner()
+	scanner, err := s.Scanner(ctx)
 
 	if err != nil {
 		return nil, err
 	}
 
-	MountParser.WithParsedResults(scanner, func(m map[string]string) bool {
+	MountParser.WithParsedResults(ctx, scanner, func(m map[string]string) bool {
 		// Check for a match
 		if m["path"] == query || m["device"] == query || isWildcard {
 			results = append(results, mountMatchToItem(m))
@@ -219,16 +219,10 @@ func mountMatchToItem(m map[string]string) *sdp.Item {
 }
 
 // mount executes /bin/mount and returns a scanner for the output
-func mountCMD() (*bufio.Scanner, error) {
-	// Create a context for timing out the command
-	ctx, cancel := context.WithTimeout(context.Background(), MountTimeout)
-
+func mountCMD(ctx context.Context) (*bufio.Scanner, error) {
 	// Execute mount. This requires a timeout as mount can hang
 	cmd := exec.CommandContext(ctx, "mount")
 	b, err := cmd.CombinedOutput()
-
-	// Release resources once the command is done
-	cancel()
 
 	if err != nil {
 		return nil, err

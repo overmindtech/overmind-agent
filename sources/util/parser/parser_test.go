@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"context"
 	"os"
 	"path"
 	"regexp"
@@ -27,7 +28,7 @@ func TestParseWithLabels(t *testing.T) {
 
 	defer file.Close()
 
-	m, err = parserLabels.Parse(file)
+	m, err = parserLabels.Parse(context.Background(), file)
 
 	if err != nil {
 		t.Error(err)

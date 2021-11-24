@@ -1,6 +1,7 @@
 package psutil
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"time"
@@ -36,7 +37,7 @@ func (s *ProcessSource) Contexts() []string {
 	}
 }
 
-func (s *ProcessSource) Get(itemContext string, query string) (*sdp.Item, error) {
+func (s *ProcessSource) Get(ctx context.Context, itemContext string, query string) (*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
@@ -64,7 +65,7 @@ func (s *ProcessSource) Get(itemContext string, query string) (*sdp.Item, error)
 	}
 
 	// Create the process object so that we can inspect it
-	p, err = process.NewProcess(int32(pid))
+	p, err = process.NewProcessWithContext(ctx, int32(pid))
 
 	if err != nil {
 		return &sdp.Item{}, &sdp.ItemRequestError{
@@ -104,15 +105,15 @@ func (s *ProcessSource) Get(itemContext string, query string) (*sdp.Item, error)
 
 	attributes["pid"] = p.Pid
 
-	if cpuPercent, err = p.CPUPercent(); err == nil {
+	if cpuPercent, err = p.CPUPercentWithContext(ctx); err == nil {
 		attributes["cpuPercent"] = cpuPercent
 	}
 
-	if cmdline, err = p.Cmdline(); err == nil {
+	if cmdline, err = p.CmdlineWithContext(ctx); err == nil {
 		attributes["cmdline"] = cmdline
 	}
 
-	if connections, err = p.Connections(); err == nil {
+	if connections, err = p.ConnectionsWithContext(ctx); err == nil {
 		// TODO: See if there is a better way to get connection info without it
 		// being super transient and overwhelming. i.e. if we were to get the
 		// details of every connection there might be thousands and they might
@@ -120,11 +121,11 @@ func (s *ProcessSource) Get(itemContext string, query string) (*sdp.Item, error)
 		attributes["numConnections"] = len(connections)
 	}
 
-	if createTime, err = p.CreateTime(); err == nil {
+	if createTime, err = p.CreateTimeWithContext(ctx); err == nil {
 		attributes["createTime"] = time.Unix(0, (createTime * 1000000)).String()
 	}
 
-	if cwd, err = p.Cwd(); err == nil {
+	if cwd, err = p.CwdWithContext(ctx); err == nil {
 		attributes["cwd"] = cwd
 
 		// We can create a link to the file here
@@ -136,7 +137,7 @@ func (s *ProcessSource) Get(itemContext string, query string) (*sdp.Item, error)
 		})
 	}
 
-	if exe, err = p.Exe(); err == nil {
+	if exe, err = p.ExeWithContext(ctx); err == nil {
 		attributes["exe"] = exe
 
 		// We can create a link to the executable here
@@ -156,7 +157,7 @@ func (s *ProcessSource) Get(itemContext string, query string) (*sdp.Item, error)
 		})
 	}
 
-	if groups, err = p.Groups(); err == nil {
+	if groups, err = p.GroupsWithContext(ctx); err == nil {
 		// Convert int32 to interface{} since the protobuf library expects a
 		// slice of interfaces
 		for _, group := range groups {
@@ -175,34 +176,34 @@ func (s *ProcessSource) Get(itemContext string, query string) (*sdp.Item, error)
 		}
 	}
 
-	if ioCounters, err = p.IOCounters(); err == nil {
+	if ioCounters, err = p.IOCountersWithContext(ctx); err == nil {
 		attributes["ioReadBytes"] = ioCounters.ReadBytes
 		attributes["ioWriteBytes"] = ioCounters.WriteBytes
 		attributes["ioReadCount"] = ioCounters.ReadCount
 		attributes["ioWriteCount"] = ioCounters.WriteCount
 	}
 
-	if ionice, err = p.IOnice(); err == nil {
+	if ionice, err = p.IOniceWithContext(ctx); err == nil {
 		attributes["ionice"] = ionice
 	}
 
-	if isRunning, err = p.IsRunning(); err == nil {
+	if isRunning, err = p.IsRunningWithContext(ctx); err == nil {
 		attributes["isRunning"] = isRunning
 	}
 
-	if memoryPercent, err = p.MemoryPercent(); err == nil {
+	if memoryPercent, err = p.MemoryPercentWithContext(ctx); err == nil {
 		attributes["memoryPercent"] = memoryPercent
 	}
 
-	if name, err = p.Name(); err == nil {
+	if name, err = p.NameWithContext(ctx); err == nil {
 		attributes["name"] = name
 	}
 
-	if nice, err = p.Nice(); err == nil {
+	if nice, err = p.NiceWithContext(ctx); err == nil {
 		attributes["nice"] = nice
 	}
 
-	if pageFaults, err = p.PageFaults(); err == nil {
+	if pageFaults, err = p.PageFaultsWithContext(ctx); err == nil {
 		// We probably don't care about minor page faults since it doesn't hit
 		// disk, however major page faults require reding from disk and could
 		// seriously impact performance, so we probably want to be tracking
@@ -210,7 +211,7 @@ func (s *ProcessSource) Get(itemContext string, query string) (*sdp.Item, error)
 		attributes["pageFaultsMajor"] = pageFaults.MajorFaults
 	}
 
-	if ppid, err = p.Ppid(); err == nil {
+	if ppid, err = p.PpidWithContext(ctx); err == nil {
 		attributes["parent"] = ppid
 
 		// Link to the parent process
@@ -222,7 +223,7 @@ func (s *ProcessSource) Get(itemContext string, query string) (*sdp.Item, error)
 		})
 	}
 
-	if status, err = p.Status(); err == nil {
+	if status, err = p.StatusWithContext(ctx); err == nil {
 		var statusLong string
 
 		switch status {
@@ -247,11 +248,11 @@ func (s *ProcessSource) Get(itemContext string, query string) (*sdp.Item, error)
 		attributes["status"] = statusLong
 	}
 
-	if terminal, err = p.Terminal(); err == nil {
+	if terminal, err = p.TerminalWithContext(ctx); err == nil {
 		attributes["terminal"] = terminal
 	}
 
-	if username, err = p.Username(); err == nil {
+	if username, err = p.UsernameWithContext(ctx); err == nil {
 		attributes["username"] = username
 
 		// Link to the username
@@ -280,7 +281,7 @@ func (s *ProcessSource) Get(itemContext string, query string) (*sdp.Item, error)
 }
 
 // BlankFind always returns an empty list of items
-func (s *ProcessSource) Find(itemContext string) ([]*sdp.Item, error) {
+func (s *ProcessSource) Find(ctx context.Context, itemContext string) ([]*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,

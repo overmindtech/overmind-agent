@@ -1,6 +1,7 @@
 package network
 
 import (
+	"context"
 	"fmt"
 	"net"
 
@@ -35,7 +36,7 @@ func (s *DNSSource) Contexts() []string {
 
 // Get calls back to the GetFunction to get a single item. This expects a DNS
 // name
-func (bc *DNSSource) Get(itemContext string, query string) (*sdp.Item, error) {
+func (bc *DNSSource) Get(ctx context.Context, itemContext string, query string) (*sdp.Item, error) {
 	if itemContext != "global" {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
@@ -101,7 +102,7 @@ func (bc *DNSSource) Get(itemContext string, query string) (*sdp.Item, error) {
 }
 
 // Find calls back to the FindFunction to find all items
-func (bc *DNSSource) Find(itemContext string) ([]*sdp.Item, error) {
+func (bc *DNSSource) Find(ctx context.Context, itemContext string) ([]*sdp.Item, error) {
 	if itemContext != "global" {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,

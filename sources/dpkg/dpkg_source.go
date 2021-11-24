@@ -1,6 +1,7 @@
 package dpkg
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/overmindtech/overmind-agent/sources/util"
@@ -37,7 +38,7 @@ func (s *DpkgSource) Contexts() []string {
 // must return an item whose UniqueAttribute value exactly matches the supplied
 // parameter. If the item cannot be found it should return an ItemNotFoundError
 // (Required)
-func (s *DpkgSource) Get(itemContext string, query string) (*sdp.Item, error) {
+func (s *DpkgSource) Get(ctx context.Context, itemContext string, query string) (*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
@@ -49,7 +50,7 @@ func (s *DpkgSource) Get(itemContext string, query string) (*sdp.Item, error) {
 	var p Package
 	var err error
 
-	p, err = Show(query)
+	p, err = Show(context.Background(), query)
 
 	if e, ok := err.(NotFoundError); ok {
 		return nil, &sdp.ItemRequestError{
@@ -67,7 +68,7 @@ func (s *DpkgSource) Get(itemContext string, query string) (*sdp.Item, error) {
 
 // Find Gets information about all item that the source can possibly find. If
 // nothing is found then just return an empty list (Required)
-func (s *DpkgSource) Find(itemContext string) ([]*sdp.Item, error) {
+func (s *DpkgSource) Find(ctx context.Context, itemContext string) ([]*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
@@ -81,7 +82,7 @@ func (s *DpkgSource) Find(itemContext string) ([]*sdp.Item, error) {
 	var item *sdp.Item
 	var items []*sdp.Item
 
-	ps, err = ShowAll()
+	ps, err = ShowAll(context.Background())
 
 	if err != nil {
 		return nil, err
@@ -100,7 +101,7 @@ func (s *DpkgSource) Find(itemContext string) ([]*sdp.Item, error) {
 
 // Search takes a file name or binary name and runs this through rpm -q
 // --whatprovides
-func (s *DpkgSource) Search(itemContext string, query string) ([]*sdp.Item, error) {
+func (s *DpkgSource) Search(ctx context.Context, itemContext string, query string) ([]*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
@@ -114,7 +115,7 @@ func (s *DpkgSource) Search(itemContext string, query string) ([]*sdp.Item, erro
 	var item *sdp.Item
 	var items []*sdp.Item
 
-	ps, err = Search(query)
+	ps, err = Search(context.Background(), query)
 
 	if err != nil {
 		return nil, err

@@ -1,6 +1,7 @@
 package psutil
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/shirou/gopsutil/disk"
@@ -34,7 +35,7 @@ func (s *DiskSource) Contexts() []string {
 }
 
 // Get information about a disk. device = path
-func (s *DiskSource) Get(itemContext string, query string) (*sdp.Item, error) {
+func (s *DiskSource) Get(ctx context.Context, itemContext string, query string) (*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
@@ -43,7 +44,7 @@ func (s *DiskSource) Get(itemContext string, query string) (*sdp.Item, error) {
 		}
 	}
 
-	diskPartitions, err := disk.Partitions(true)
+	diskPartitions, err := disk.PartitionsWithContext(ctx, true)
 
 	if err != nil {
 		// There was an error getting the disk partitions
@@ -58,7 +59,7 @@ func (s *DiskSource) Get(itemContext string, query string) (*sdp.Item, error) {
 
 	for _, p := range diskPartitions {
 		if p.Device == query {
-			return getDiskInformation(p)
+			return getDiskInformation(ctx, p)
 		}
 	}
 
@@ -71,7 +72,7 @@ func (s *DiskSource) Get(itemContext string, query string) (*sdp.Item, error) {
 }
 
 // Find information about all of the disks.
-func (s *DiskSource) Find(itemContext string) ([]*sdp.Item, error) {
+func (s *DiskSource) Find(ctx context.Context, itemContext string) ([]*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
@@ -84,7 +85,7 @@ func (s *DiskSource) Find(itemContext string) ([]*sdp.Item, error) {
 
 	items = make([]*sdp.Item, 0)
 
-	diskPartitions, err := disk.Partitions(false)
+	diskPartitions, err := disk.PartitionsWithContext(ctx, false)
 
 	if err != nil {
 		// There was an error getting the disk partitions
@@ -96,7 +97,7 @@ func (s *DiskSource) Find(itemContext string) ([]*sdp.Item, error) {
 	}
 
 	for _, partition := range diskPartitions {
-		item, err := getDiskInformation(partition)
+		item, err := getDiskInformation(ctx, partition)
 
 		if err == nil {
 			items = append(items, item)
@@ -112,7 +113,7 @@ func (s *DiskSource) Find(itemContext string) ([]*sdp.Item, error) {
 	return items, nil
 }
 
-func getDiskInformation(partition disk.PartitionStat) (*sdp.Item, error) {
+func getDiskInformation(ctx context.Context, partition disk.PartitionStat) (*sdp.Item, error) {
 	var err error
 
 	attributes := make(map[string]interface{})
@@ -140,7 +141,7 @@ func getDiskInformation(partition disk.PartitionStat) (*sdp.Item, error) {
 	// Try to get statistics about the disk usage
 	var diskUsage *disk.UsageStat
 
-	diskUsage, err = disk.Usage(partition.Mountpoint)
+	diskUsage, err = disk.UsageWithContext(ctx, partition.Mountpoint)
 
 	// If there was not error then go ahead
 	if err == nil {
@@ -158,7 +159,7 @@ func getDiskInformation(partition disk.PartitionStat) (*sdp.Item, error) {
 	var counters map[string]disk.IOCountersStat
 
 	// Try to get statistics about IO
-	counters, err = disk.IOCounters(partition.Device)
+	counters, err = disk.IOCountersWithContext(ctx, partition.Device)
 
 	// If there was not error then go ahead
 	if err == nil {

@@ -4,6 +4,7 @@
 package unix
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/user"
@@ -40,7 +41,7 @@ func (s *FileSource) Contexts() []string {
 }
 
 // Get calls back to the GetFunction to get a single item
-func (bc *FileSource) Get(itemContext string, query string) (*sdp.Item, error) {
+func (bc *FileSource) Get(ctx context.Context, itemContext string, query string) (*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
@@ -163,7 +164,7 @@ func (bc *FileSource) Get(itemContext string, query string) (*sdp.Item, error) {
 }
 
 // Find calls back to the FindFunction to find all items
-func (bc *FileSource) Find(itemContext string) ([]*sdp.Item, error) {
+func (bc *FileSource) Find(ctx context.Context, itemContext string) ([]*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
