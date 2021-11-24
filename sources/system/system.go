@@ -1,6 +1,7 @@
 package system
 
 import (
+	"context"
 	"fmt"
 	"net"
 
@@ -45,7 +46,7 @@ func (s *SystemSource) Contexts() []string {
 // must return an item whose UniqueAttribute value exactly matches the supplied
 // parameter. If the item cannot be found it should return an ItemNotFoundError
 // (Required)
-func (s *SystemSource) Get(itemContext string, query string) (*sdp.Item, error) {
+func (s *SystemSource) Get(ctx context.Context, itemContext string, query string) (*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
@@ -86,7 +87,7 @@ func shouldIgnoreIP(ip net.IP) bool {
 
 // Find Gets information about all item that the source can possibly find. If
 // nothing is found then just return an empty list (Required)
-func (s *SystemSource) Find(itemContext string) ([]*sdp.Item, error) {
+func (s *SystemSource) Find(ctx context.Context, itemContext string) ([]*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,

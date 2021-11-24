@@ -1,6 +1,7 @@
 package command
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -29,10 +30,12 @@ func TestRun(t *testing.T) {
 		params := CommandParams{
 			Command:      "hostname",
 			ExpectedExit: 0,
-			Timeout:      1 * time.Second,
 		}
 
-		item, err := params.Run()
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+
+		item, err := params.Run(ctx)
 
 		if err != nil {
 			t.Fatal(err)
@@ -88,10 +91,12 @@ func TestRun(t *testing.T) {
 
 			params := CommandParams{
 				Command: command,
-				Timeout: 2 * time.Second,
 			}
 
-			item, err := params.Run()
+			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+			defer cancel()
+
+			item, err := params.Run(ctx)
 
 			if err != nil {
 				t.Error(err)
@@ -106,10 +111,12 @@ func TestRun(t *testing.T) {
 
 			params := CommandParams{
 				Command: command,
-				Timeout: 500 * time.Millisecond,
 			}
 
-			_, err := params.Run()
+			ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+			defer cancel()
+
+			_, err := params.Run(ctx)
 
 			if err == nil || !timeoutrror.MatchString(err.Error()) {
 				t.Error("No error returned or error was not timeout, command should have timed out")
@@ -132,7 +139,7 @@ func TestRun(t *testing.T) {
 				ExpectedExit: 0,
 			}
 
-			_, err := params.Run()
+			_, err := params.Run(context.Background())
 
 			if err == nil {
 				t.Error("Expected command to fail but it didn't")
@@ -145,7 +152,7 @@ func TestRun(t *testing.T) {
 				ExpectedExit: 1,
 			}
 
-			_, err := params.Run()
+			_, err := params.Run(context.Background())
 
 			if err != nil {
 				t.Fatal(err)
@@ -162,7 +169,7 @@ func TestRun(t *testing.T) {
 			Command: "exit 1",
 		}
 
-		_, err := params.Run()
+		_, err := params.Run(context.Background())
 
 		if err == nil {
 			t.Fatal("expected command to fail but didn't")
@@ -178,7 +185,7 @@ func TestRun(t *testing.T) {
 			Command: "echo qwerty",
 		}
 
-		item, err := params.Run()
+		item, err := params.Run(context.Background())
 
 		if err != nil {
 			t.Fatal(err)
@@ -198,7 +205,7 @@ func TestRun(t *testing.T) {
 			Command: "perl -e 'print STDERR qwerty'",
 		}
 
-		item, err := params.Run()
+		item, err := params.Run(context.Background())
 
 		if err != nil {
 			t.Fatal(err)
@@ -219,7 +226,7 @@ func TestRun(t *testing.T) {
 			ExpectedExit: 4,
 		}
 
-		item, err := params.Run()
+		item, err := params.Run(context.Background())
 
 		if err != nil {
 			t.Fatal(err)
@@ -240,7 +247,7 @@ func TestRun(t *testing.T) {
 			ExpectedExit: 4,
 		}
 
-		item, err := params.Run()
+		item, err := params.Run(context.Background())
 
 		if err != nil {
 			t.Fatal(err)
@@ -253,7 +260,6 @@ func TestRun(t *testing.T) {
 }
 
 const jsonString = `{
-	"timeout": "500ms",
 	"stdin": "eWVzCmZvbyBiYXI=",
 	"command": "cat hosts",
 	"expected_exit": 0,
@@ -266,7 +272,6 @@ const jsonString = `{
 var jsonObject = CommandParams{
 	Command:      "cat hosts",
 	ExpectedExit: 0,
-	Timeout:      500 * time.Millisecond,
 	Dir:          "/etc",
 	Env: map[string]string{
 		"TEST": "foo",
@@ -311,10 +316,6 @@ func TestUnmarshalJSON(t *testing.T) {
 
 	if cp.ExpectedExit != jsonObject.ExpectedExit {
 		t.Errorf("ExpectedExit did not match, got %v, expected %v", cp.ExpectedExit, jsonObject.ExpectedExit)
-	}
-
-	if cp.Timeout.String() != jsonObject.Timeout.String() {
-		t.Errorf("Timeout.String() did not match, got %v, expected %v", cp.Timeout.String(), jsonObject.Timeout.String())
 	}
 
 	if cp.Env["TEST"] != jsonObject.Env["TEST"] {
@@ -400,7 +401,7 @@ func TestRunComplex(t *testing.T) {
 			Command: `[ -f /etc/foobar ] && echo "exists" || echo "does not exist"`,
 		}
 
-		item, err := cp.Run()
+		item, err := cp.Run(context.Background())
 
 		if err != nil {
 			t.Fatal(err)
@@ -428,7 +429,7 @@ func TestRunComplex(t *testing.T) {
 			Command: string(content),
 		}
 
-		item, err := cp.Run()
+		item, err := cp.Run(context.Background())
 
 		if err != nil {
 			t.Fatal(err)
@@ -460,7 +461,7 @@ func TestRunComplexPowershell(t *testing.T) {
 		Command: string(content),
 	}
 
-	_, err = cp.Run()
+	_, err = cp.Run(context.Background())
 
 	if err != nil {
 		t.Fatal(err)
@@ -484,10 +485,12 @@ func TestSTDIN(t *testing.T) {
 		cp := CommandParams{
 			Command: string(content),
 			STDIN:   []byte("testing\n"),
-			Timeout: 5 * time.Second,
 		}
 
-		item, err := cp.Run()
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		item, err := cp.Run(ctx)
 
 		if err != nil {
 			t.Fatal(err)

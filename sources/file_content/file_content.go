@@ -1,6 +1,7 @@
 package file_content
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"io/fs"
@@ -58,7 +59,7 @@ func (s *FileContentSource) Contexts() []string {
 }
 
 // Get calls back to the GetFunction to get a single item
-func (bc *FileContentSource) Get(itemContext string, query string) (*sdp.Item, error) {
+func (bc *FileContentSource) Get(ctx context.Context, itemContext string, query string) (*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
@@ -136,7 +137,7 @@ func (bc *FileContentSource) Get(itemContext string, query string) (*sdp.Item, e
 }
 
 // Find calls back to the FindFunction to find all items
-func (bc *FileContentSource) Find(itemContext string) ([]*sdp.Item, error) {
+func (bc *FileContentSource) Find(ctx context.Context, itemContext string) ([]*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,

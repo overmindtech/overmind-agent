@@ -1,15 +1,13 @@
 package command
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/overmindtech/overmind-agent/sources/util"
 	"github.com/overmindtech/sdp-go"
 )
-
-const GetTimeout = 10 * time.Second
 
 // CommandSource struct on which all methods are registered
 type CommandSource struct{}
@@ -45,7 +43,7 @@ func (s *CommandSource) Contexts() []string {
 // full command to run, including arguments, as a string. This command will be
 // run with default values for all other parametres. For more complex commands,
 // use Search()
-func (s *CommandSource) Get(itemContext string, query string) (*sdp.Item, error) {
+func (s *CommandSource) Get(ctx context.Context, itemContext string, query string) (*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
@@ -58,7 +56,7 @@ func (s *CommandSource) Get(itemContext string, query string) (*sdp.Item, error)
 		Command: query,
 	}
 
-	return params.Run()
+	return params.Run(ctx)
 }
 
 // Search runs a command with a given set of parameteres. These paremeteres
@@ -74,7 +72,7 @@ func (s *CommandSource) Get(itemContext string, query string) (*sdp.Item, error)
 //         "FOO": "BAR"
 //     }
 // }
-func (s *CommandSource) Search(itemContext string, query string) ([]*sdp.Item, error) {
+func (s *CommandSource) Search(ctx context.Context, itemContext string, query string) ([]*sdp.Item, error) {
 	var params CommandParams
 	var item *sdp.Item
 
@@ -89,7 +87,7 @@ func (s *CommandSource) Search(itemContext string, query string) ([]*sdp.Item, e
 		}
 	}
 
-	item, err = params.Run()
+	item, err = params.Run(ctx)
 
 	items = append(items, item)
 
@@ -98,7 +96,7 @@ func (s *CommandSource) Search(itemContext string, query string) ([]*sdp.Item, e
 
 // Find Gets information about all item that the source can possibly find. If
 // nothing is found then just return an empty list (Required)
-func (s *CommandSource) Find(itemContext string) ([]*sdp.Item, error) {
+func (s *CommandSource) Find(ctx context.Context, itemContext string) ([]*sdp.Item, error) {
 	return nil, &sdp.ItemRequestError{
 		ErrorType:   sdp.ItemRequestError_OTHER,
 		ErrorString: "the command source only supports the Get and Search methods",

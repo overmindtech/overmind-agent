@@ -4,6 +4,7 @@
 package netstat
 
 import (
+	"context"
 	"fmt"
 	"runtime"
 	"strconv"
@@ -44,7 +45,7 @@ func (s *PortSource) Contexts() []string {
 }
 
 // Get calls back to the GetFunction to get a single item
-func (s *PortSource) Get(itemContext string, query string) (*sdp.Item, error) {
+func (s *PortSource) Get(ctx context.Context, itemContext string, query string) (*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
@@ -93,7 +94,7 @@ func (s *PortSource) Get(itemContext string, query string) (*sdp.Item, error) {
 }
 
 // Find calls back to the FindFunction to find all items
-func (s *PortSource) Find(itemContext string) ([]*sdp.Item, error) {
+func (s *PortSource) Find(ctx context.Context, itemContext string) ([]*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,

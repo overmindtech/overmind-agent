@@ -89,19 +89,6 @@ var ServiceStatusProperties = []string{
 	"SuccessExitStatus",
 }
 
-// GetContext returns a context that takes the timeout into account. The
-// timeourt defaults to 2s
-func (bc *ServiceSource) GetContext() (context.Context, context.CancelFunc) {
-	timeout := bc.Timeout
-
-	// Default to 2s
-	if timeout == time.Duration(0) {
-		timeout = DEFAULT_TIMEOUT
-	}
-
-	return context.WithTimeout(context.Background(), timeout)
-}
-
 // Type is the type of items that this returns (Required)
 func (bc *ServiceSource) Type() string {
 	return "service"
@@ -130,7 +117,7 @@ func (s *ServiceSource) Contexts() []string {
 // must return an item whose UniqueAttribute value exactly matches the supplied
 // parameter. If the item cannot be found it should return an ItemNotFoundError
 // (Required)
-func (bc *ServiceSource) Get(itemContext string, query string) (*sdp.Item, error) {
+func (bc *ServiceSource) Get(ctx context.Context, itemContext string, query string) (*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
@@ -145,9 +132,7 @@ func (bc *ServiceSource) Get(itemContext string, query string) (*sdp.Item, error
 	var units []dbus.UnitStatus
 	var item *sdp.Item
 
-	queryContext, queryCancel := bc.GetContext()
-
-	c, err = dbus.NewWithContext(queryContext)
+	c, err = dbus.NewWithContext(ctx)
 
 	if err != nil {
 		return nil, &sdp.ItemRequestError{
@@ -159,12 +144,11 @@ func (bc *ServiceSource) Get(itemContext string, query string) (*sdp.Item, error
 
 	// Cacnel once we're done
 	defer c.Close()
-	defer queryCancel()
 
 	// This matches the LoadState of "loaded"
 	// https://www.freedesktop.org/wiki/Software/systemd/dbus/
 	units, err = c.ListUnitsByNamesContext(
-		queryContext,
+		ctx,
 		[]string{query},
 	)
 
@@ -192,7 +176,7 @@ func (bc *ServiceSource) Get(itemContext string, query string) (*sdp.Item, error
 		}
 	}
 
-	item, err = mapUnitToItem(units[0], c, queryContext)
+	item, err = mapUnitToItem(ctx, units[0], c)
 
 	if err != nil {
 		return nil, &sdp.ItemRequestError{
@@ -207,7 +191,7 @@ func (bc *ServiceSource) Get(itemContext string, query string) (*sdp.Item, error
 
 // Find Gets information about all item that the source can possibly find. If
 // nothing is found then just return an empty list (Required)
-func (bc *ServiceSource) Find(itemContext string) ([]*sdp.Item, error) {
+func (bc *ServiceSource) Find(ctx context.Context, itemContext string) ([]*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
@@ -222,9 +206,7 @@ func (bc *ServiceSource) Find(itemContext string) ([]*sdp.Item, error) {
 	var item *sdp.Item
 	var items []*sdp.Item
 
-	queryContext, queryCancel := bc.GetContext()
-
-	c, err = dbus.NewWithContext(queryContext)
+	c, err = dbus.NewWithContext(ctx)
 
 	if err != nil {
 		return nil, &sdp.ItemRequestError{
@@ -235,9 +217,8 @@ func (bc *ServiceSource) Find(itemContext string) ([]*sdp.Item, error) {
 	}
 
 	defer c.Close()
-	defer queryCancel()
 
-	units, err = c.ListUnitsContext(queryContext)
+	units, err = c.ListUnitsContext(ctx)
 
 	if err != nil {
 		return nil, &sdp.ItemRequestError{
@@ -248,7 +229,7 @@ func (bc *ServiceSource) Find(itemContext string) ([]*sdp.Item, error) {
 	}
 
 	for _, unit := range units {
-		item, err = mapUnitToItem(unit, c, queryContext)
+		item, err = mapUnitToItem(ctx, unit, c)
 
 		if err == nil {
 			items = append(items, item)
@@ -262,7 +243,7 @@ func (bc *ServiceSource) Find(itemContext string) ([]*sdp.Item, error) {
 // glob patterns:
 //   - {input}.*
 //
-func (bc *ServiceSource) Search(itemContext string, query string) ([]*sdp.Item, error) {
+func (bc *ServiceSource) Search(ctx context.Context, itemContext string, query string) ([]*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
@@ -277,9 +258,7 @@ func (bc *ServiceSource) Search(itemContext string, query string) ([]*sdp.Item, 
 	var item *sdp.Item
 	var items []*sdp.Item
 
-	queryContext, queryCancel := bc.GetContext()
-
-	c, err = dbus.NewWithContext(queryContext)
+	c, err = dbus.NewWithContext(ctx)
 
 	if err != nil {
 		return nil, &sdp.ItemRequestError{
@@ -291,12 +270,11 @@ func (bc *ServiceSource) Search(itemContext string, query string) ([]*sdp.Item, 
 
 	// Cacnel once we're done
 	defer c.Close()
-	defer queryCancel()
 
 	// This matches the LoadState of "loaded"
 	// https://www.freedesktop.org/wiki/Software/systemd/dbus/
 	units, err = c.ListUnitsByPatternsContext(
-		queryContext,
+		ctx,
 		[]string{"loaded"},
 		[]string{
 			query,
@@ -313,7 +291,7 @@ func (bc *ServiceSource) Search(itemContext string, query string) ([]*sdp.Item, 
 	}
 
 	for _, unit := range units {
-		item, err = mapUnitToItem(unit, c, queryContext)
+		item, err = mapUnitToItem(ctx, unit, c)
 
 		if err == nil {
 			items = append(items, item)
@@ -331,7 +309,7 @@ func (bc *ServiceSource) Supported() bool {
 }
 
 // mapUnitToItem Maps a unit to a "service" item
-func mapUnitToItem(u dbus.UnitStatus, c *dbus.Conn, context context.Context) (*sdp.Item, error) {
+func mapUnitToItem(ctx context.Context, u dbus.UnitStatus, c *dbus.Conn) (*sdp.Item, error) {
 	var a map[string]interface{}
 	var attributes *sdp.ItemAttributes
 	var err error
@@ -359,13 +337,13 @@ func mapUnitToItem(u dbus.UnitStatus, c *dbus.Conn, context context.Context) (*s
 		a["SubState"] = u.SubState
 	}
 
-	if p, e := c.GetUnitPropertyContext(context, u.Name, "FragmentPath"); e == nil {
+	if p, e := c.GetUnitPropertyContext(ctx, u.Name, "FragmentPath"); e == nil {
 		a["FragmentPath"] = p.Value
 	}
 
 	// Loop over the ServiceProperties and check if they are non-zero
 	for _, propName := range ServiceBasicProperties {
-		prop, err := c.GetUnitTypePropertyContext(context, u.Name, "Service", propName)
+		prop, err := c.GetUnitTypePropertyContext(ctx, u.Name, "Service", propName)
 
 		if err == nil {
 			v := reflect.ValueOf(prop.Value.Value())
@@ -379,7 +357,7 @@ func mapUnitToItem(u dbus.UnitStatus, c *dbus.Conn, context context.Context) (*s
 	// Loop over exec properties and extract them. This requires different logic
 	// since they are store in a much more complex data structure
 	for _, propName := range ServiceExecProperties {
-		prop, err := c.GetUnitTypePropertyContext(context, u.Name, "Service", propName)
+		prop, err := c.GetUnitTypePropertyContext(ctx, u.Name, "Service", propName)
 
 		if err == nil {
 			// Check the data is the type we are expecting
@@ -419,7 +397,7 @@ func mapUnitToItem(u dbus.UnitStatus, c *dbus.Conn, context context.Context) (*s
 	}
 
 	for _, propName := range ServiceStatusProperties {
-		prop, err := c.GetUnitTypePropertyContext(context, u.Name, "Service", propName)
+		prop, err := c.GetUnitTypePropertyContext(ctx, u.Name, "Service", propName)
 
 		if err == nil {
 			slices, ok := prop.Value.Value().([]interface{})

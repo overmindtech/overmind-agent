@@ -1,6 +1,7 @@
 package dpkg
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/url"
@@ -44,7 +45,7 @@ func Supported() bool {
 }
 
 // ShowAll shows all packages
-func ShowAll() ([]Package, error) {
+func ShowAll(ctx context.Context) ([]Package, error) {
 	var command *exec.Cmd
 	var err error
 	var output []byte
@@ -56,7 +57,7 @@ func ShowAll() ([]Package, error) {
 	}
 
 	args = []string{"-f", QueryFormat, "--show"}
-	command = exec.Command("dpkg-query", args...)
+	command = exec.CommandContext(ctx, "dpkg-query", args...)
 
 	// Run the command
 	output, err = command.Output()
@@ -80,7 +81,7 @@ func ShowAll() ([]Package, error) {
 }
 
 // Show Gets info for one specific package
-func Show(name string) (Package, error) {
+func Show(ctx context.Context, name string) (Package, error) {
 	var command *exec.Cmd
 	var err error
 	var output []byte
@@ -91,7 +92,7 @@ func Show(name string) (Package, error) {
 	}
 
 	args := []string{"-f", QueryFormat, "--show", name}
-	command = exec.Command("dpkg-query", args...)
+	command = exec.CommandContext(ctx, "dpkg-query", args...)
 
 	// Run the command
 	output, err = command.Output()
@@ -130,7 +131,7 @@ func Show(name string) (Package, error) {
 }
 
 // Search searches for what packages provides a given file or filename-search-pattern
-func Search(pattern string) ([]Package, error) {
+func Search(ctx context.Context, pattern string) ([]Package, error) {
 	var searchCommand *exec.Cmd
 	var searchOutput []byte
 	var searchArgs []string
@@ -142,7 +143,7 @@ func Search(pattern string) ([]Package, error) {
 	}
 
 	searchArgs = []string{"--search", pattern}
-	searchCommand = exec.Command("dpkg-query", searchArgs...)
+	searchCommand = exec.CommandContext(ctx, "dpkg-query", searchArgs...)
 
 	// Run the command
 	searchOutput, err = searchCommand.Output()
@@ -177,7 +178,7 @@ func Search(pattern string) ([]Package, error) {
 		name := fields[0]
 
 		// Get the package details
-		pkg, err := Show(name)
+		pkg, err := Show(ctx, name)
 
 		if err == nil {
 			packages = append(packages, pkg)

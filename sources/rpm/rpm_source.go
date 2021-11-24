@@ -1,6 +1,7 @@
 package rpm
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/overmindtech/overmind-agent/sources/util"
@@ -38,7 +39,7 @@ func (s *RPMSource) Contexts() []string {
 // must return an item whose UniqueAttribute value exactly matches the supplied
 // parameter. If the item cannot be found it should return an ItemNotFoundError
 // (Required)
-func (bc *RPMSource) Get(itemContext string, query string) (*sdp.Item, error) {
+func (bc *RPMSource) Get(ctx context.Context, itemContext string, query string) (*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
@@ -50,7 +51,7 @@ func (bc *RPMSource) Get(itemContext string, query string) (*sdp.Item, error) {
 	var p Package
 	var err error
 
-	p, err = Query(query)
+	p, err = Query(ctx, query)
 
 	if e, ok := err.(NotFoundError); ok {
 		return nil, &sdp.ItemRequestError{
@@ -69,7 +70,7 @@ func (bc *RPMSource) Get(itemContext string, query string) (*sdp.Item, error) {
 
 // Find Gets information about all item that the source can possibly find. If
 // nothing is found then just return an empty list (Required)
-func (bc *RPMSource) Find(itemContext string) ([]*sdp.Item, error) {
+func (bc *RPMSource) Find(ctx context.Context, itemContext string) ([]*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
@@ -83,7 +84,7 @@ func (bc *RPMSource) Find(itemContext string) ([]*sdp.Item, error) {
 	var item *sdp.Item
 	var items []*sdp.Item
 
-	ps, err = QueryAll()
+	ps, err = QueryAll(ctx)
 
 	if err != nil {
 		return nil, &sdp.ItemRequestError{
@@ -106,7 +107,7 @@ func (bc *RPMSource) Find(itemContext string) ([]*sdp.Item, error) {
 
 // Search takes a file name or binary name and runs this through rpm -q
 // --whatprovides
-func (bc *RPMSource) Search(itemContext string, query string) ([]*sdp.Item, error) {
+func (bc *RPMSource) Search(ctx context.Context, itemContext string, query string) ([]*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
@@ -120,7 +121,7 @@ func (bc *RPMSource) Search(itemContext string, query string) ([]*sdp.Item, erro
 	var item *sdp.Item
 	var items []*sdp.Item
 
-	ps, err = WhatProvides(query)
+	ps, err = WhatProvides(ctx, query)
 
 	if err != nil {
 		return nil, &sdp.ItemRequestError{

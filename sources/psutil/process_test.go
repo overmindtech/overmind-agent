@@ -1,6 +1,7 @@
 package psutil
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"regexp"
@@ -21,7 +22,7 @@ func TestProcessGet(t *testing.T) {
 	childPID = float64(os.Getpid())
 
 	// Get the current process
-	childProcess, err = source.Get(util.LocalContext, fmt.Sprint(childPID))
+	childProcess, err = source.Get(context.Background(), util.LocalContext, fmt.Sprint(childPID))
 
 	if err != nil {
 		t.Error(err)

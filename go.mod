@@ -7,8 +7,8 @@ require (
 	github.com/cakturk/go-netstat v0.0.0-20200220111822-e5b49efee7a5
 	github.com/coreos/go-systemd/v22 v22.3.2
 	github.com/elastic/go-sysinfo v1.7.1
-	github.com/overmindtech/discovery v0.5.0
-	github.com/overmindtech/sdp-go v0.3.1
+	github.com/overmindtech/discovery v0.6.0
+	github.com/overmindtech/sdp-go v0.5.3
 	github.com/shirou/gopsutil v3.21.10+incompatible
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.2.1
@@ -48,10 +48,12 @@ require (
 	github.com/tklauser/go-sysconf v0.3.9 // indirect
 	github.com/tklauser/numcpus v0.3.0 // indirect
 	golang.org/x/crypto v0.0.0-20211117183948-ae814b36b871 // indirect
-	golang.org/x/sys v0.0.0-20211117180635-dee7805ff2e1 // indirect
+	golang.org/x/sys v0.0.0-20211123173158-ef496fb156ab // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/ini.v1 v1.64.0 // indirect
 	howett.net/plist v0.0.0-20201203080718-1454fab16a06 // indirect
 )
+
+require github.com/google/uuid v1.3.0 // indirect

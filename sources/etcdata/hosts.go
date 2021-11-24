@@ -2,6 +2,7 @@ package etcdata
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -64,8 +65,8 @@ func (s *HostsSource) Contexts() []string {
 // must return an item whose UniqueAttribute value exactly matches the supplied
 // parameter. If the item cannot be found it should return an ItemNotFoundError
 // (Required)
-func (s *HostsSource) Get(itemContext string, query string) (*sdp.Item, error) {
-	items, err := s.Search(itemContext, query)
+func (s *HostsSource) Get(ctx context.Context, itemContext string, query string) (*sdp.Item, error) {
+	items, err := s.Search(ctx, itemContext, query)
 
 	if err != nil {
 		return nil, err
@@ -79,12 +80,12 @@ func (s *HostsSource) Get(itemContext string, query string) (*sdp.Item, error) {
 }
 
 // Find finds all items
-func (s *HostsSource) Find(itemContext string) ([]*sdp.Item, error) {
-	return s.Search(itemContext, "*")
+func (s *HostsSource) Find(ctx context.Context, itemContext string) ([]*sdp.Item, error) {
+	return s.Search(ctx, itemContext, "*")
 }
 
 // Search Search for a host entry, the query can be an ip, a name or '*'
-func (s *HostsSource) Search(itemContext string, query string) ([]*sdp.Item, error) {
+func (s *HostsSource) Search(ctx context.Context, itemContext string, query string) ([]*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
@@ -119,60 +120,65 @@ func (s *HostsSource) Search(itemContext string, query string) ([]*sdp.Item, err
 	// Read the file one line at a time
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		matches = Entry.FindStringSubmatch(scanner.Text())
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		default:
+			matches = Entry.FindStringSubmatch(scanner.Text())
 
-		if matches != nil {
-			var attributes *sdp.ItemAttributes
+			if matches != nil {
+				var attributes *sdp.ItemAttributes
 
-			// Populate the matches into a map so that we can look things up
-			// e.g.
-			//
-			// line["address"]
-			for i, match := range matches {
-				matchName := names[i]
-				if matchName != "" && match != "" {
-					if matchName != "aliases" {
-						line[matchName] = match
-					} else {
-						var aliases []interface{}
-						fields := strings.Fields(match)
+				// Populate the matches into a map so that we can look things up
+				// e.g.
+				//
+				// line["address"]
+				for i, match := range matches {
+					matchName := names[i]
+					if matchName != "" && match != "" {
+						if matchName != "aliases" {
+							line[matchName] = match
+						} else {
+							var aliases []interface{}
+							fields := strings.Fields(match)
 
-						for _, f := range fields {
-							aliases = append(aliases, f)
+							for _, f := range fields {
+								aliases = append(aliases, f)
+							}
+
+							line[matchName] = aliases
 						}
-
-						line[matchName] = aliases
 					}
 				}
-			}
 
-			// Check if the host matches the query
-			if !(query == line["address"] || query == line["name"] || wildcard) {
-				// If the address or the name doesn't match this host and we
-				// don't have a wildcard search, then discard
-				continue
-			}
+				// Check if the host matches the query
+				if !(query == line["address"] || query == line["name"] || wildcard) {
+					// If the address or the name doesn't match this host and we
+					// don't have a wildcard search, then discard
+					continue
+				}
 
-			attributes, err = sdp.ToAttributes(line)
+				attributes, err = sdp.ToAttributes(line)
 
-			if err != nil {
-				return nil, err
-			}
+				if err != nil {
+					return nil, err
+				}
 
-			items = append(items, &sdp.Item{
-				Type:            "host",
-				UniqueAttribute: "name",
-				Attributes:      attributes,
-				Context:         util.LocalContext,
-				LinkedItemRequests: []*sdp.ItemRequest{
-					{
-						Type:    "ip",
-						Method:  sdp.RequestMethod_GET,
-						Query:   fmt.Sprint(line["address"]),
-						Context: "global",
+				items = append(items, &sdp.Item{
+					Type:            "host",
+					UniqueAttribute: "name",
+					Attributes:      attributes,
+					Context:         util.LocalContext,
+					LinkedItemRequests: []*sdp.ItemRequest{
+						{
+							Type:    "ip",
+							Method:  sdp.RequestMethod_GET,
+							Query:   fmt.Sprint(line["address"]),
+							Context: "global",
+						},
 					},
-				},
-			})
+				})
+			}
 		}
 	}
 

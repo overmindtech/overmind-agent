@@ -1,6 +1,7 @@
 package rpm
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/url"
@@ -48,7 +49,7 @@ func Supported() bool {
 }
 
 // QueryAll Runs `rpm -qa`
-func QueryAll() ([]Package, error) {
+func QueryAll(ctx context.Context) ([]Package, error) {
 	var command *exec.Cmd
 	var err error
 	var output []byte
@@ -60,7 +61,7 @@ func QueryAll() ([]Package, error) {
 	}
 
 	args = []string{"-qa", "--queryformat", fmt.Sprintf("%v", QueryFormat)}
-	command = exec.Command("rpm", args...)
+	command = exec.CommandContext(ctx, "rpm", args...)
 
 	// Run the command
 	output, err = command.Output()
@@ -84,7 +85,7 @@ func QueryAll() ([]Package, error) {
 }
 
 // Query Gets info for one specific package
-func Query(name string) (Package, error) {
+func Query(ctx context.Context, name string) (Package, error) {
 	var command *exec.Cmd
 	var err error
 	var output []byte
@@ -95,7 +96,7 @@ func Query(name string) (Package, error) {
 	}
 
 	args := []string{"-q", name, "--queryformat", fmt.Sprintf("%v", QueryFormat)}
-	command = exec.Command("rpm", args...)
+	command = exec.CommandContext(ctx, "rpm", args...)
 
 	// Run the command
 	output, err = command.Output()
@@ -130,7 +131,7 @@ func Query(name string) (Package, error) {
 }
 
 // WhatProvides runs rpm -q --whatprovides with the given query
-func WhatProvides(query string) ([]Package, error) {
+func WhatProvides(ctx context.Context, query string) ([]Package, error) {
 	var command *exec.Cmd
 	var err error
 	var output []byte
@@ -140,7 +141,7 @@ func WhatProvides(query string) ([]Package, error) {
 	}
 
 	args := []string{"-q", "--whatprovides", query, "--queryformat", fmt.Sprintf("%v", QueryFormat)}
-	command = exec.Command("rpm", args...)
+	command = exec.CommandContext(ctx, "rpm", args...)
 
 	// Run the command
 	output, err = command.Output()

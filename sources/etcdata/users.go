@@ -2,6 +2,7 @@ package etcdata
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"os"
 	"regexp"
@@ -65,7 +66,7 @@ func (s *UsersSource) Contexts() []string {
 // must return an item whose UniqueAttribute value exactly matches the supplied
 // parameter. If the item cannot be found it should return an ItemNotFoundError
 // (Required)
-func (s *UsersSource) Get(itemContext string, query string) (*sdp.Item, error) {
+func (s *UsersSource) Get(ctx context.Context, itemContext string, query string) (*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
@@ -85,7 +86,7 @@ func (s *UsersSource) Get(itemContext string, query string) (*sdp.Item, error) {
 
 	defer file.Close()
 
-	PasswdParser.WithParsedResults(scanner, func(m map[string]string) bool {
+	PasswdParser.WithParsedResults(ctx, scanner, func(m map[string]string) bool {
 		if m["username"] == query {
 			item = userMatchToItem(m)
 
@@ -113,13 +114,13 @@ func (s *UsersSource) Get(itemContext string, query string) (*sdp.Item, error) {
 
 // Find Gets information about all item that the source can possibly find. If
 // nothing is found then just return an empty list (Required)
-func (s *UsersSource) Find(itemContext string) ([]*sdp.Item, error) {
-	return s.Search(itemContext, "*")
+func (s *UsersSource) Find(ctx context.Context, itemContext string) ([]*sdp.Item, error) {
+	return s.Search(ctx, itemContext, "*")
 }
 
 // Search Searches by UID or Name (exact match). A "*" can also be passed which
 // will return all items
-func (s *UsersSource) Search(itemContext string, query string) ([]*sdp.Item, error) {
+func (s *UsersSource) Search(ctx context.Context, itemContext string, query string) ([]*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
@@ -141,7 +142,7 @@ func (s *UsersSource) Search(itemContext string, query string) ([]*sdp.Item, err
 
 	defer file.Close()
 
-	PasswdParser.WithParsedResults(scanner, func(m map[string]string) bool {
+	PasswdParser.WithParsedResults(ctx, scanner, func(m map[string]string) bool {
 		// Check for a match
 		if m["username"] == query || m["uid"] == query || isWildcard {
 			results = append(results, userMatchToItem(m))

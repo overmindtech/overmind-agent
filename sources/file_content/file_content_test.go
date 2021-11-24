@@ -1,6 +1,7 @@
 package file_content
 
 import (
+	"context"
 	"fmt"
 	"path"
 	"runtime"
@@ -17,7 +18,7 @@ func TestFileContentGet(t *testing.T) {
 	t.Run("With a text file", func(t *testing.T) {
 		src := FileContentSource{}
 
-		item, err := src.Get(util.LocalContext, exampleTextFile)
+		item, err := src.Get(context.Background(), util.LocalContext, exampleTextFile)
 
 		if err != nil {
 			t.Fatal(err)
@@ -41,7 +42,7 @@ func TestFileContentGet(t *testing.T) {
 	t.Run("With a binary file", func(t *testing.T) {
 		src := FileContentSource{}
 
-		item, err := src.Get(util.LocalContext, exampleBinaryFile)
+		item, err := src.Get(context.Background(), util.LocalContext, exampleBinaryFile)
 
 		if err != nil {
 			t.Fatal(err)
@@ -65,13 +66,13 @@ func TestFileContentGet(t *testing.T) {
 			MaxSize: 64,
 		}
 
-		_, err := src.Get(util.LocalContext, exampleTextFile)
+		_, err := src.Get(context.Background(), util.LocalContext, exampleTextFile)
 
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		_, err = src.Get(util.LocalContext, exampleBinaryFile)
+		_, err = src.Get(context.Background(), util.LocalContext, exampleBinaryFile)
 
 		if err == nil {
 			t.Fatal("Expected error when reading file with size > 64B")

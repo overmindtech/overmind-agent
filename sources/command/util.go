@@ -27,9 +27,6 @@ type CommandParams struct {
 	// ExpectedExit is the expected exit code (usually 0)
 	ExpectedExit int `json:"expected_exit"`
 
-	// Timeout before cancelling the command
-	Timeout time.Duration `json:"timeout"`
-
 	// Dir specifies the working directory of the command.
 	Dir string `json:"dir"`
 
@@ -59,26 +56,22 @@ func (cp CommandParams) MarshalJSON() ([]byte, error) {
 	// format (i.e. a string)
 	type Alias CommandParams
 	return json.Marshal(&struct {
-		Timeout string `json:"timeout"`
-		STDIN   string `json:"stdin"`
+		STDIN string `json:"stdin"`
 		*Alias
 	}{
-		Timeout: cp.Timeout.String(),
-		STDIN:   base64.StdEncoding.EncodeToString(cp.STDIN),
-		Alias:   (*Alias)(&cp),
+		STDIN: base64.StdEncoding.EncodeToString(cp.STDIN),
+		Alias: (*Alias)(&cp),
 	})
 }
 
 // UnmarshalJSON Converts the object from JSON
 func (cp *CommandParams) UnmarshalJSON(data []byte) error {
-	var timeoutDuration time.Duration
 	var stdin []byte
 	var err error
 
 	type Alias CommandParams
 	aux := &struct {
-		Timeout string `json:"timeout"`
-		STDIN   string `json:"stdin"`
+		STDIN string `json:"stdin"`
 		*Alias
 	}{
 		Alias: (*Alias)(cp),
@@ -87,16 +80,6 @@ func (cp *CommandParams) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
-
-	// Parse the `timeout` parameter using time.ParseDuration meaning that the
-	// duration should be in a human readable format e.g. "300ms", "-1.5h" or
-	// "2h45m". Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
-	timeoutDuration, err = time.ParseDuration(aux.Timeout)
-	if err != nil {
-		return err
-	}
-
-	cp.Timeout = timeoutDuration
 
 	// Decode the STDIN from base64 to bytes
 	stdin, err = base64.StdEncoding.DecodeString(aux.STDIN)
@@ -110,15 +93,7 @@ func (cp *CommandParams) UnmarshalJSON(data []byte) error {
 }
 
 // Run Runs the command and returns an item and error
-func (cp *CommandParams) Run() (*sdp.Item, error) {
-	if cp.Timeout == 0 {
-		// Use default timeout if none was specified
-		cp.Timeout = DefaultTimeout
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), cp.Timeout)
-	defer cancel()
-
+func (cp *CommandParams) Run(ctx context.Context) (*sdp.Item, error) {
 	var commandString string
 	var args []string
 	var err error

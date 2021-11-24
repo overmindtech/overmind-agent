@@ -1,6 +1,7 @@
 package rpm
 
 import (
+	"context"
 	"os/exec"
 	"strings"
 	"testing"
@@ -27,7 +28,7 @@ func TestQueryAll(t *testing.T) {
 		t.Skip("Non-RPM based system, skipping tests")
 	}
 
-	ps, err := QueryAll()
+	ps, err := QueryAll(context.Background())
 
 	if err != nil {
 		t.Fatal(err)
@@ -52,7 +53,7 @@ func TestQueryAll(t *testing.T) {
 	for _, pkgName := range lines {
 		t.Run(pkgName, func(t *testing.T) {
 			if pkgName != "" {
-				_, err := Query(pkgName)
+				_, err := Query(context.Background(), pkgName)
 
 				if err != nil {
 					t.Fatal(err)
@@ -72,11 +73,11 @@ func TestQuery(t *testing.T) {
 	}
 
 	// Get a package for testing
-	ps, _ := QueryAll()
+	ps, _ := QueryAll(context.Background())
 
 	packageName := ps[len(ps)-1].Name
 
-	p, err := Query(packageName)
+	p, err := Query(context.Background(), packageName)
 
 	if err != nil {
 		t.Fatal(err)
@@ -131,7 +132,7 @@ func TestEmptyQuery(t *testing.T) {
 	}
 
 	// Get a package for testing
-	_, err := Query("thisShouldNotExist")
+	_, err := Query(context.Background(), "thisShouldNotExist")
 
 	_, ok := err.(NotFoundError)
 
@@ -150,7 +151,7 @@ func TestWhatProvides(t *testing.T) {
 	}
 
 	// Test a query that should work
-	packages, err := WhatProvides("bash")
+	packages, err := WhatProvides(context.Background(), "bash")
 
 	if err != nil {
 		t.Fatalf("Error getting what provides bash: %v", err)
@@ -167,14 +168,14 @@ func TestWhatProvides(t *testing.T) {
 	}
 
 	// Test a query that shouldn't work
-	_, err = WhatProvides("notarealcommand")
+	_, err = WhatProvides(context.Background(), "notarealcommand")
 
 	if _, ok := err.(NotFoundError); ok == false {
 		t.Fatalf("Expected NotFoundError, got %T: %v", err, err)
 	}
 
 	// Test a bad query
-	_, err = WhatProvides("/var/foo/bad/path.txt")
+	_, err = WhatProvides(context.Background(), "/var/foo/bad/path.txt")
 
 	if err == nil {
 		t.Fatal("Found no error with bad query")
