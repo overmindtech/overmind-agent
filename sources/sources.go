@@ -6,7 +6,6 @@ import (
 	"github.com/overmindtech/overmind-agent/sources/dpkg"
 	"github.com/overmindtech/overmind-agent/sources/etcdata"
 	"github.com/overmindtech/overmind-agent/sources/file_content"
-	"github.com/overmindtech/overmind-agent/sources/network"
 	"github.com/overmindtech/overmind-agent/sources/psutil"
 	"github.com/overmindtech/overmind-agent/sources/rpm"
 	"github.com/overmindtech/overmind-agent/sources/system"
@@ -18,7 +17,6 @@ var Sources []discovery.Source
 // that they are supported before actually loading them
 func init() {
 	Sources = append(Sources, &etcdata.HostsSource{})
-	Sources = append(Sources, &network.DNSSource{})
 	Sources = append(Sources, &psutil.DiskSource{})
 	Sources = append(Sources, &psutil.ProcessSource{})
 	Sources = append(Sources, &system.SystemSource{})
