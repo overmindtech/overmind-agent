@@ -27,8 +27,8 @@ func TestGetFind(t *testing.T) {
 
 	lines := strings.Split(string(output), "\n")
 
-	if len(lines) > 0 {
-		line := lines[len(lines)-1]
+	if len(lines) > 1 {
+		line := lines[len(lines)-2]
 
 		if line != "" {
 			tests := []util.SourceTest{
@@ -48,7 +48,7 @@ func TestGetFind(t *testing.T) {
 					Method:        sdp.RequestMethod_FIND,
 					ExpectedError: nil,
 					ExpectedItems: &util.ExpectedItems{
-						NumItems: len(lines),
+						NumItems: len(lines) - 1,
 					},
 				},
 			}

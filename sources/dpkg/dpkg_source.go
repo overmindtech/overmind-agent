@@ -50,7 +50,7 @@ func (s *DpkgSource) Get(ctx context.Context, itemContext string, query string) 
 	var p Package
 	var err error
 
-	p, err = Show(context.Background(), query)
+	p, err = Show(ctx, query)
 
 	if e, ok := err.(NotFoundError); ok {
 		return nil, &sdp.ItemRequestError{
@@ -82,7 +82,7 @@ func (s *DpkgSource) Find(ctx context.Context, itemContext string) ([]*sdp.Item,
 	var item *sdp.Item
 	var items []*sdp.Item
 
-	ps, err = ShowAll(context.Background())
+	ps, err = ShowAll(ctx)
 
 	if err != nil {
 		return nil, err
@@ -115,7 +115,7 @@ func (s *DpkgSource) Search(ctx context.Context, itemContext string, query strin
 	var item *sdp.Item
 	var items []*sdp.Item
 
-	ps, err = Search(context.Background(), query)
+	ps, err = Search(ctx, query)
 
 	if err != nil {
 		return nil, err
