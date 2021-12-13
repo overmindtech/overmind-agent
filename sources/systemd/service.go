@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -239,9 +240,12 @@ func (bc *ServiceSource) Find(ctx context.Context, itemContext string) ([]*sdp.I
 	return items, nil
 }
 
-// Search searches by a glob pattern, but also appends the follwoing default
+// Search searches by a glob pattern, but also appends the following default
 // glob patterns:
 //   - {input}.*
+//
+// If the query is an integer, it will be converted to the name of the units
+// which owns a process with that PID
 //
 func (bc *ServiceSource) Search(ctx context.Context, itemContext string, query string) ([]*sdp.Item, error) {
 	if itemContext != util.LocalContext {
@@ -268,8 +272,15 @@ func (bc *ServiceSource) Search(ctx context.Context, itemContext string, query s
 		}
 	}
 
-	// Cacnel once we're done
 	defer c.Close()
+
+	if i, err := strconv.Atoi(query); err == nil {
+		if name, err := c.GetUnitNameByPID(ctx, uint32(i)); err == nil {
+			// If the query is an integer, and that integer corresponds to a
+			// PID, which corresponds to a unit, search by that name instead
+			query = name
+		}
+	}
 
 	// This matches the LoadState of "loaded"
 	// https://www.freedesktop.org/wiki/Software/systemd/dbus/

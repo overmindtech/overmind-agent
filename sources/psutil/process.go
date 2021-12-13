@@ -105,6 +105,14 @@ func (s *ProcessSource) Get(ctx context.Context, itemContext string, query strin
 
 	attributes["pid"] = p.Pid
 
+	// Look for the service that owns the pid
+	item.LinkedItemRequests = append(item.LinkedItemRequests, &sdp.ItemRequest{
+		Type:    "service",
+		Method:  sdp.RequestMethod_SEARCH,
+		Query:   fmt.Sprint(p.Pid),
+		Context: itemContext,
+	})
+
 	if cpuPercent, err = p.CPUPercentWithContext(ctx); err == nil {
 		attributes["cpuPercent"] = cpuPercent
 	}

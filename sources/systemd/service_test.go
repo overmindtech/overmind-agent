@@ -95,6 +95,7 @@ func TestServiceSearch(t *testing.T) {
 		"ssh.service",
 		"dbus",
 		"ssh",
+		"1",
 	}
 
 	source := ServiceSource{}
