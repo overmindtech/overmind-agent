@@ -4,6 +4,8 @@
 package systemd
 
 import (
+	"context"
+	"fmt"
 	"testing"
 
 	"github.com/overmindtech/overmind-agent/sources/util"
@@ -95,7 +97,6 @@ func TestServiceSearch(t *testing.T) {
 		"ssh.service",
 		"dbus",
 		"ssh",
-		"1",
 	}
 
 	source := ServiceSource{}
@@ -135,6 +136,25 @@ func TestServiceSearch(t *testing.T) {
 				NumItems: 1,
 			},
 		})
+	}
+
+	if items, err := source.Search(context.Background(), util.LocalContext, "ssh"); err == nil {
+		pid, err := items[0].Attributes.Get("ExecMainPID")
+
+		if err != nil {
+			t.Error(err)
+		} else {
+			tests = append(tests, util.SourceTest{
+				Name:        "with PID",
+				ItemContext: util.LocalContext,
+				Query:       fmt.Sprint(pid),
+				Method:      sdp.RequestMethod_SEARCH,
+				ExpectedItems: &util.ExpectedItems{
+					NumItems: 1,
+				},
+			})
+		}
+
 	}
 
 	util.RunSourceTests(t, tests, &source)
