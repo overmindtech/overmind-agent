@@ -4,8 +4,8 @@
 package netstat
 
 import (
+	"context"
 	"net"
-	"strings"
 	"testing"
 
 	"github.com/overmindtech/overmind-agent/sources/util"
@@ -17,7 +17,7 @@ func TestPortGet(t *testing.T) {
 	var err error
 
 	// Listen for incoming connections on a random port
-	l, err := net.Listen("tcp", "localhost:0")
+	l, err := net.Listen("tcp", "0.0.0.0:0")
 
 	if err != nil {
 		t.Errorf("Error listening: %v", err.Error())
@@ -26,7 +26,7 @@ func TestPortGet(t *testing.T) {
 	// Close the listener when the application closes.
 	defer l.Close()
 
-	testPort = strings.Split(l.Addr().String(), ":")[1]
+	_, testPort, _ = net.SplitHostPort(l.Addr().String())
 
 	tests := []util.SourceTest{
 		{
@@ -47,4 +47,50 @@ func TestPortGet(t *testing.T) {
 	}
 
 	util.RunSourceTests(t, tests, &PortSource{})
+}
+
+func TestPortGetSocketLinks(t *testing.T) {
+	var testPort string
+	var err error
+
+	// Listen for incoming connections on a random port
+	l, err := net.Listen("tcp", "0.0.0.0:0")
+
+	if err != nil {
+		t.Errorf("Error listening: %v", err.Error())
+	}
+
+	// Close the listener when the application closes.
+	defer l.Close()
+
+	_, testPort, _ = net.SplitHostPort(l.Addr().String())
+
+	src := PortSource{}
+
+	item, err := src.Get(context.Background(), util.LocalContext, testPort)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(item.LinkedItemRequests) < 2 {
+		t.Error("expected at least 2 linked item requests")
+	}
+
+	// Make sure that the IP has been expanded.
+	for _, lir := range item.LinkedItemRequests {
+		if lir.Type == "networksocket" {
+			host, _, err := net.SplitHostPort(lir.Query)
+
+			if err != nil {
+				t.Error(err)
+			}
+
+			if ip := net.ParseIP(host); ip != nil {
+				if ip.IsUnspecified() {
+					t.Errorf("found unspecififed IP in linked items: %v", ip.String())
+				}
+			}
+		}
+	}
 }

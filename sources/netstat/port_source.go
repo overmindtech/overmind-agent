@@ -6,6 +6,7 @@ package netstat
 import (
 	"context"
 	"fmt"
+	"net"
 	"runtime"
 	"strconv"
 
@@ -55,6 +56,8 @@ func (s *PortSource) Get(ctx context.Context, itemContext string, query string) 
 	}
 
 	var err error
+	var sockets4 []ns.SockTabEntry
+	var sockets6 []ns.SockTabEntry
 	var sockets []ns.SockTabEntry
 	var socket ns.SockTabEntry
 	var port int
@@ -65,7 +68,9 @@ func (s *PortSource) Get(ctx context.Context, itemContext string, query string) 
 		return nil, fmt.Errorf("could not convert %v to uint16", query)
 	}
 
-	sockets, _ = ns.TCPSocks(acceptNumber(uint16(port)))
+	sockets4, _ = ns.TCPSocks(acceptNumber(uint16(port)))
+	sockets6, _ = ns.TCP6Socks(acceptNumber(uint16(port)))
+	sockets = append(sockets4, sockets6...)
 
 	switch numSockets := len(sockets); numSockets {
 	case 0:
@@ -156,12 +161,32 @@ func socketToItem(s ns.SockTabEntry) (*sdp.Item, error) {
 		attributes["port"] = uint32(s.LocalAddr.Port)
 		attributes["localIP"] = s.LocalAddr.IP.String()
 
-		item.LinkedItemRequests = append(item.LinkedItemRequests, &sdp.ItemRequest{
-			Context: "global",
-			Method:  sdp.RequestMethod_GET,
-			Query:   s.LocalAddr.IP.String(),
-			Type:    "ip",
-		})
+		// If the IP is unspecified (0.0.0.0 or ::) it means that the port will
+		// be listening on all IPs, therefore we need to do some expansion
+		if s.LocalAddr.IP.IsUnspecified() {
+			unicastAddresses, err := net.InterfaceAddrs()
+
+			if err == nil {
+				for _, address := range unicastAddresses {
+					// Extract just the IP address
+					if ipNet, ok := address.(*net.IPNet); ok {
+						item.LinkedItemRequests = append(item.LinkedItemRequests, &sdp.ItemRequest{
+							Context: "global",
+							Method:  sdp.RequestMethod_GET,
+							Query:   net.JoinHostPort(ipNet.IP.String(), fmt.Sprint(s.LocalAddr.Port)),
+							Type:    "networksocket",
+						})
+					}
+				}
+			}
+		} else {
+			item.LinkedItemRequests = append(item.LinkedItemRequests, &sdp.ItemRequest{
+				Context: "global",
+				Method:  sdp.RequestMethod_GET,
+				Query:   net.JoinHostPort(s.LocalAddr.IP.String(), fmt.Sprint(s.LocalAddr.Port)),
+				Type:    "networksocket",
+			})
+		}
 	} else {
 		// I'm pretty sure if there is no local address then the socker isn't a port so we should fail
 		return nil, fmt.Errorf("socket with UID %v does not have an associated localAddress. Cannot determine port", s.UID)
