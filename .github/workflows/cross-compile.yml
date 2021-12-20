@@ -205,7 +205,6 @@ jobs:
       env:
         PROJECT_DIR: ${{ steps.setup.outputs.project_dir }}
       run: |
-        go mod tidy
         go mod vendor -v
 
     - name: Build
