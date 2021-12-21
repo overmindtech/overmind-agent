@@ -229,11 +229,15 @@ jobs:
     needs:
       - build
     steps:
+      # Downloads all artifacts
       - uses: actions/download-artifact@v2
-        # Downloads all artifacts
+      # Zip them up
+      - name: Zip Artifacts
+        run: 'for i in */; do zip -r "${i%/}.zip" "$i"; done'
+      # Creates a release and attaches
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "overmind-agent-*-*/*"
+          artifacts: "*.zip"
           generateReleaseNotes: true
           token: ${{ secrets.GITHUB_TOKEN }}
