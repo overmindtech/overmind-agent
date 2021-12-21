@@ -229,9 +229,11 @@ jobs:
     needs:
       - build
     steps:
+      - uses: actions/download-artifact@v2
+        # Downloads all artifacts
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "*"
+          artifacts: "overmind-agent-*-*/*"
           generateReleaseNotes: true
           token: ${{ secrets.GITHUB_TOKEN }}
