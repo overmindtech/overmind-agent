@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/coreos/go-systemd/v22/dbus"
@@ -32,7 +33,166 @@ import (
 
 // ServiceSource struct on which all methods are registered
 type ServiceSource struct {
-	Timeout time.Duration
+	getFunction           func(ctx context.Context, units []string) ([]dbus.UnitStatus, error)
+	getFunctionMutex      sync.Mutex
+	getFunctionDetermined bool
+
+	searchFunction           func(ctx context.Context, units []string) ([]dbus.UnitStatus, error)
+	searchFunctionMutex      sync.Mutex
+	searchFunctionDetermined bool
+
+	dbusConnection      *dbus.Conn
+	dbusConnectionMutex sync.Mutex
+}
+
+// DBusConnection Returns the current shared dBus connection, creating a new one
+// if required
+func (s *ServiceSource) DBusConnection() (*dbus.Conn, error) {
+	s.dbusConnectionMutex.Lock()
+	defer s.dbusConnectionMutex.Unlock()
+
+	if s.dbusConnection == nil {
+		var err error
+
+		s.dbusConnection, err = dbus.NewWithContext(context.Background())
+
+		if err != nil {
+			return s.dbusConnection, err
+		}
+	}
+
+	return s.dbusConnection, nil
+}
+
+// getFunction Returns the function that should be used to get units. This will
+// end up calling different methods of dBus depending on availability
+func (s *ServiceSource) GetFunction() (func(ctx context.Context, units []string) ([]dbus.UnitStatus, error), error) {
+	s.getFunctionMutex.Lock()
+	defer s.getFunctionMutex.Unlock()
+
+	if s.getFunctionDetermined {
+		return s.getFunction, nil
+	}
+
+	conn, err := s.DBusConnection()
+
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	// See if we can use ListUnitsByNamesContext (preferred)
+	if _, err := conn.ListUnitsByNamesContext(ctx, []string{"*"}); err == nil {
+		s.getFunction = conn.ListUnitsByNamesContext
+	} else {
+		s.getFunction = s.bruteSearch
+	}
+	s.getFunctionDetermined = true
+
+	return s.getFunction, nil
+}
+
+// searchFunction Returns the function that should be used to get units. This will
+// end up calling different methods of dBus depending on availability
+func (s *ServiceSource) SearchFunction() (func(ctx context.Context, units []string) ([]dbus.UnitStatus, error), error) {
+	s.searchFunctionMutex.Lock()
+	defer s.searchFunctionMutex.Unlock()
+
+	if s.searchFunctionDetermined {
+		return s.searchFunction, nil
+	}
+
+	conn, err := s.DBusConnection()
+
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	if _, err := conn.ListUnitsByPatternsContext(ctx, []string{"loaded"}, []string{"foobar"}); err == nil {
+		s.searchFunction = func(ctx context.Context, patterns []string) ([]dbus.UnitStatus, error) {
+			conn, err := s.DBusConnection()
+			if err != nil {
+				return nil, err
+			}
+			return conn.ListUnitsByPatternsContext(ctx, []string{"loaded"}, patterns)
+		}
+	} else {
+		s.searchFunction = s.bruteSearch
+	}
+	s.searchFunctionDetermined = true
+
+	return s.searchFunction, nil
+}
+
+// bruteSearch Replicates the functionality of ListUnitsByPatternsContext but
+// using a brute force approach of getting all units and then filtering by the
+// given patterns. This is required on old versions of systemd that don't
+// implement better methods like ListUnitsByPatternsContext
+func (s *ServiceSource) bruteSearch(ctx context.Context, patterns []string) ([]dbus.UnitStatus, error) {
+	conn, err := s.DBusConnection()
+
+	if err != nil {
+		return nil, err
+	}
+
+	var allUnits []dbus.UnitStatus
+	var filteredUnits []dbus.UnitStatus
+
+	allUnits, err = conn.ListUnitsContext(ctx)
+
+	if err != nil {
+		return allUnits, err
+	}
+
+	var patternRegexes []*regexp.Regexp
+
+	// Convert paterns to regexes
+	for _, pattern := range patterns {
+		patternRegexes = append(patternRegexes, regexp.MustCompile(wildCardToRegexp(pattern)))
+	}
+
+	for _, unit := range allUnits {
+		if unit.LoadState != "loaded" {
+			continue
+		}
+
+		var patternMatched bool
+
+		for _, r := range patternRegexes {
+			if patternMatched {
+				continue
+			}
+
+			if r.MatchString(unit.Name) {
+				filteredUnits = append(filteredUnits, unit)
+				patternMatched = true
+			}
+		}
+	}
+
+	return filteredUnits, nil
+}
+
+// wildCardToRegexp converts a wildcard pattern to a regular expression pattern.
+func wildCardToRegexp(pattern string) string {
+	var result strings.Builder
+	for i, literal := range strings.Split(pattern, "*") {
+
+		// Replace * with .*
+		if i > 0 {
+			result.WriteString(".*")
+		}
+
+		// Quote any regular expression meta characters in the
+		// literal text.
+		result.WriteString(regexp.QuoteMeta(literal))
+	}
+	return result.String()
 }
 
 // DEFAULT_TIMEOUT Default DBUS query timeout
@@ -91,13 +251,13 @@ var ServiceStatusProperties = []string{
 }
 
 // Type is the type of items that this returns (Required)
-func (bc *ServiceSource) Type() string {
+func (s *ServiceSource) Type() string {
 	return "service"
 }
 
 // Name Returns the name of the backend package. This is used for
 // debugging and logging (Required)
-func (bc *ServiceSource) Name() string {
+func (s *ServiceSource) Name() string {
 	return "systemd"
 }
 
@@ -118,7 +278,7 @@ func (s *ServiceSource) Contexts() []string {
 // must return an item whose UniqueAttribute value exactly matches the supplied
 // parameter. If the item cannot be found it should return an ItemNotFoundError
 // (Required)
-func (bc *ServiceSource) Get(ctx context.Context, itemContext string, query string) (*sdp.Item, error) {
+func (s *ServiceSource) Get(ctx context.Context, itemContext string, query string) (*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
@@ -127,13 +287,12 @@ func (bc *ServiceSource) Get(ctx context.Context, itemContext string, query stri
 		}
 	}
 
-	// TODO: Should we be re-using the DBUS connection?
-	var c *dbus.Conn
-	var err error
 	var units []dbus.UnitStatus
 	var item *sdp.Item
+	var getFunc func(ctx context.Context, units []string) ([]dbus.UnitStatus, error)
+	var err error
 
-	c, err = dbus.NewWithContext(ctx)
+	getFunc, err = s.GetFunction()
 
 	if err != nil {
 		return nil, &sdp.ItemRequestError{
@@ -143,12 +302,9 @@ func (bc *ServiceSource) Get(ctx context.Context, itemContext string, query stri
 		}
 	}
 
-	// Cacnel once we're done
-	defer c.Close()
-
 	// This matches the LoadState of "loaded"
 	// https://www.freedesktop.org/wiki/Software/systemd/dbus/
-	units, err = c.ListUnitsByNamesContext(
+	units, err = getFunc(
 		ctx,
 		[]string{query},
 	)
@@ -177,7 +333,7 @@ func (bc *ServiceSource) Get(ctx context.Context, itemContext string, query stri
 		}
 	}
 
-	item, err = mapUnitToItem(ctx, units[0], c)
+	item, err = s.mapUnitToItem(ctx, units[0])
 
 	if err != nil {
 		return nil, &sdp.ItemRequestError{
@@ -192,7 +348,7 @@ func (bc *ServiceSource) Get(ctx context.Context, itemContext string, query stri
 
 // Find Gets information about all item that the source can possibly find. If
 // nothing is found then just return an empty list (Required)
-func (bc *ServiceSource) Find(ctx context.Context, itemContext string) ([]*sdp.Item, error) {
+func (s *ServiceSource) Find(ctx context.Context, itemContext string) ([]*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
@@ -230,7 +386,7 @@ func (bc *ServiceSource) Find(ctx context.Context, itemContext string) ([]*sdp.I
 	}
 
 	for _, unit := range units {
-		item, err = mapUnitToItem(ctx, unit, c)
+		item, err = s.mapUnitToItem(ctx, unit)
 
 		if err == nil {
 			items = append(items, item)
@@ -247,7 +403,7 @@ func (bc *ServiceSource) Find(ctx context.Context, itemContext string) ([]*sdp.I
 // If the query is an integer, it will be converted to the name of the units
 // which owns a process with that PID
 //
-func (bc *ServiceSource) Search(ctx context.Context, itemContext string, query string) ([]*sdp.Item, error) {
+func (s *ServiceSource) Search(ctx context.Context, itemContext string, query string) ([]*sdp.Item, error) {
 	if itemContext != util.LocalContext {
 		return nil, &sdp.ItemRequestError{
 			ErrorType:   sdp.ItemRequestError_NOCONTEXT,
@@ -256,13 +412,13 @@ func (bc *ServiceSource) Search(ctx context.Context, itemContext string, query s
 		}
 	}
 
-	var c *dbus.Conn
 	var err error
 	var units []dbus.UnitStatus
 	var item *sdp.Item
 	var items []*sdp.Item
+	var searchFunc func(ctx context.Context, units []string) ([]dbus.UnitStatus, error)
 
-	c, err = dbus.NewWithContext(ctx)
+	searchFunc, err = s.SearchFunction()
 
 	if err != nil {
 		return nil, &sdp.ItemRequestError{
@@ -272,21 +428,20 @@ func (bc *ServiceSource) Search(ctx context.Context, itemContext string, query s
 		}
 	}
 
-	defer c.Close()
-
 	if i, err := strconv.Atoi(query); err == nil {
-		if name, err := c.GetUnitNameByPID(ctx, uint32(i)); err == nil {
-			// If the query is an integer, and that integer corresponds to a
-			// PID, which corresponds to a unit, search by that name instead
-			query = name
+		if conn, err := s.DBusConnection(); err == nil {
+			if name, err := conn.GetUnitNameByPID(ctx, uint32(i)); err == nil {
+				// If the query is an integer, and that integer corresponds to a
+				// PID, which corresponds to a unit, search by that name instead
+				query = name
+			}
 		}
 	}
 
 	// This matches the LoadState of "loaded"
 	// https://www.freedesktop.org/wiki/Software/systemd/dbus/
-	units, err = c.ListUnitsByPatternsContext(
+	units, err = searchFunc(
 		ctx,
-		[]string{"loaded"},
 		[]string{
 			query,
 			fmt.Sprintf("%v.*", query),
@@ -302,7 +457,7 @@ func (bc *ServiceSource) Search(ctx context.Context, itemContext string, query s
 	}
 
 	for _, unit := range units {
-		item, err = mapUnitToItem(ctx, unit, c)
+		item, err = s.mapUnitToItem(ctx, unit)
 
 		if err == nil {
 			items = append(items, item)
@@ -315,20 +470,26 @@ func (bc *ServiceSource) Search(ctx context.Context, itemContext string, query s
 // Supported A function that can be executed to see if the backend is supported
 // in the current environment, if it returns false the backend simply won't be
 // loaded (Optional)
-func (bc *ServiceSource) Supported() bool {
+func (s *ServiceSource) Supported() bool {
 	return systemdUtil.IsRunningSystemd()
 }
 
 // mapUnitToItem Maps a unit to a "service" item
-func mapUnitToItem(ctx context.Context, u dbus.UnitStatus, c *dbus.Conn) (*sdp.Item, error) {
+func (s *ServiceSource) mapUnitToItem(ctx context.Context, u dbus.UnitStatus) (*sdp.Item, error) {
 	var a map[string]interface{}
 	var attributes *sdp.ItemAttributes
 	var err error
 	var linkedItemRequests []*sdp.ItemRequest
 	var binaries map[string]bool
+	var c *dbus.Conn
 
 	a = make(map[string]interface{})
 	binaries = make(map[string]bool)
+	c, err = s.DBusConnection()
+
+	if err != nil {
+		return nil, err
+	}
 
 	match := serviceRegex.MatchString(u.Name)
 

@@ -41,7 +41,6 @@ func TestServiceFind(t *testing.T) {
 func TestServiceGet(t *testing.T) {
 	services := []string{
 		"dbus.service",
-		"ssh.service",
 	}
 
 	source := ServiceSource{}
@@ -94,9 +93,7 @@ func TestServiceGet(t *testing.T) {
 func TestServiceSearch(t *testing.T) {
 	services := []string{
 		"dbus.service",
-		"ssh.service",
 		"dbus",
-		"ssh",
 	}
 
 	source := ServiceSource{}
@@ -138,7 +135,7 @@ func TestServiceSearch(t *testing.T) {
 		})
 	}
 
-	if items, err := source.Search(context.Background(), util.LocalContext, "ssh"); err == nil {
+	if items, err := source.Search(context.Background(), util.LocalContext, "dbus.service"); err == nil {
 		pid, err := items[0].Attributes.Get("ExecMainPID")
 
 		if err != nil {

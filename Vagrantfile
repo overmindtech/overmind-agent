@@ -82,6 +82,24 @@ Vagrant.configure("2") do |config|
     centos.vm.provision "shell", inline: linux_provision
   end
 
+  config.vm.define "amazon" do |centos|
+    centos.vm.box = "bento/amazonlinux-2"
+    #centos.vm.network "private_network", ip: "192.168.158.10"
+
+    centos.vm.provision "shell", inline: <<-SHELL
+      # Patch
+      yum update -y
+
+      # Add Puppet repos
+      sudo rpm -Uvh https://yum.puppet.com/puppet6-release-el-8.noarch.rpm
+
+      # Install git dependencies
+      yum install git puppet-agent epel-release net-tools -y
+    SHELL
+
+    centos.vm.provision "shell", inline: linux_provision
+  end
+
   config.vm.define "windows" do |windows|
     windows.vm.box = "peru/windows-server-2019-standard-x64-eval"
 
