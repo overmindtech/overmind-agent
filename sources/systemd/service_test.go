@@ -41,7 +41,6 @@ func TestServiceFind(t *testing.T) {
 func TestServiceGet(t *testing.T) {
 	services := []string{
 		"dbus.service",
-		"sshd.service",
 	}
 
 	source := ServiceSource{}
