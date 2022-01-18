@@ -3,7 +3,10 @@ package psutil
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/overmindtech/overmind-agent/sources/util"
@@ -117,8 +120,56 @@ func (s *ProcessSource) Get(ctx context.Context, itemContext string, query strin
 		attributes["cpuPercent"] = cpuPercent
 	}
 
+	if cwd, err = p.CwdWithContext(ctx); err == nil {
+		attributes["cwd"] = cwd
+
+		// We can create a link to the file here
+		item.LinkedItemRequests = append(item.LinkedItemRequests, &sdp.ItemRequest{
+			Type:    "file",
+			Method:  sdp.RequestMethod_GET,
+			Query:   cwd,
+			Context: itemContext,
+		})
+	}
+
 	if cmdline, err = p.CmdlineWithContext(ctx); err == nil {
 		attributes["cmdline"] = cmdline
+
+		// Try to parse out related files from the command line
+		args := strings.Split(cmdline, " ")
+
+		if len(args) > 1 {
+			// Loop over all but the first argument
+			for i := 1; i < len(args); i++ {
+				var path string
+
+				// Check if the file path is relative
+				if filepath.IsAbs(args[i]) {
+					path = args[i]
+				} else {
+					// If it is, join to the CWD to get the full path
+					path, err = filepath.Rel(cwd, args[i])
+
+					if err != nil {
+						// If we can't join the path it's probably it's not a
+						// real path, therefore ignore
+						continue
+					}
+				}
+
+				// Check if the file exists
+				_, err := os.Stat(path)
+
+				if err == nil {
+					item.LinkedItemRequests = append(item.LinkedItemRequests, &sdp.ItemRequest{
+						Type:    "file",
+						Method:  sdp.RequestMethod_GET,
+						Query:   path,
+						Context: itemContext,
+					})
+				}
+			}
+		}
 	}
 
 	if connections, err = p.ConnectionsWithContext(ctx); err == nil {
@@ -131,18 +182,6 @@ func (s *ProcessSource) Get(ctx context.Context, itemContext string, query strin
 
 	if createTime, err = p.CreateTimeWithContext(ctx); err == nil {
 		attributes["createTime"] = time.Unix(0, (createTime * 1000000)).String()
-	}
-
-	if cwd, err = p.CwdWithContext(ctx); err == nil {
-		attributes["cwd"] = cwd
-
-		// We can create a link to the file here
-		item.LinkedItemRequests = append(item.LinkedItemRequests, &sdp.ItemRequest{
-			Type:    "file",
-			Method:  sdp.RequestMethod_GET,
-			Query:   cwd,
-			Context: itemContext,
-		})
 	}
 
 	if exe, err = p.ExeWithContext(ctx); err == nil {
