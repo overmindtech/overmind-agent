@@ -62,13 +62,15 @@ Edit this once you have created your source
 		e := discovery.Engine{
 			Name: "overmind-agent",
 			NATSOptions: &discovery.NATSOptions{
-				URLs:           natsServers,
-				ConnectionName: fmt.Sprintf("%v.%v", natsNamePrefix, hostname),
-				ConnectTimeout: (10 * time.Second), // TODO: Make configurable
-				NumRetries:     5,
-				CAFile:         natsCAFile,
-				NkeyFile:       natsNKeyFile,
-				JWTFile:        natsJWTFile,
+				URLs:            natsServers,
+				ConnectionName:  fmt.Sprintf("%v.%v", natsNamePrefix, hostname),
+				ConnectTimeout:  (10 * time.Second), // TODO: Make configurable
+				MaxReconnect:    5,                  // TODO: Make configurable
+				ReconnectWait:   time.Second,        // TODO: Make configurable
+				ReconnectJitter: 3 * time.Second,    // TODO: Make configurable
+				CAFile:          natsCAFile,
+				NkeyFile:        natsNKeyFile,
+				JWTFile:         natsJWTFile,
 			},
 			MaxParallelExecutions: maxParallel,
 		}

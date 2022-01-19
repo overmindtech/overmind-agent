@@ -5,9 +5,9 @@ go 1.17
 // Direct dependencies
 require (
 	github.com/cakturk/go-netstat v0.0.0-20200220111822-e5b49efee7a5
-	github.com/coreos/go-systemd/v22 v22.0.0-20211213101732-f5a75de5182a // Awaiting > 22.3.2
+	github.com/coreos/go-systemd/v22 v22.3.2 // Awaiting > 22.3.2
 	github.com/elastic/go-sysinfo v1.7.1
-	github.com/overmindtech/discovery v0.10.1
+	github.com/overmindtech/discovery v0.11.0
 	github.com/overmindtech/sdp-go v0.6.1
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/sirupsen/logrus v1.8.1
@@ -33,7 +33,7 @@ require (
 	github.com/minio/highwayhash v1.0.2 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
-	github.com/nats-io/jwt/v2 v2.2.0 // indirect
+	github.com/nats-io/jwt/v2 v2.2.1-0.20220113022732-58e87895b296 // indirect
 	github.com/nats-io/nats.go v1.13.1-0.20211122170419-d7c1d78a50fc // indirect
 	github.com/nats-io/nkeys v0.3.0 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
