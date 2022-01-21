@@ -78,16 +78,6 @@ Edit this once you have created your source
 		// ⚠️ Here is where you add your sources
 		e.AddSources(sources.Sources...)
 
-		err = e.Connect()
-
-		if err != nil {
-			log.WithFields(log.Fields{
-				"error": err,
-			}).Error("Could not connect to NATS")
-
-			os.Exit(1)
-		}
-
 		err = e.Start()
 
 		if err != nil {
