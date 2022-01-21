@@ -14,7 +14,7 @@
                 "--log",
                 "trace",
                 "--nats-servers",
-                "nats://10.0.2.2:4222,nats://localhost:4222.nats://nats:4222",
+                "nats://10.0.2.2:4222,nats://localhost:4222,nats://nats:4222,nats://nats.overmind-demo.youcan.dance",
             ]
         }
     ]
