@@ -58,6 +58,7 @@ jobs:
     steps:
       - name: Install C Compiler
         run: |
+          yum makecache
           yum group install "Development Tools" -y
 
       - name: Set up Go 1.x
