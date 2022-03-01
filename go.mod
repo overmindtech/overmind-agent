@@ -2,10 +2,17 @@ module github.com/overmindtech/overmind-agent
 
 go 1.17
 
+// This is required as we are still waiting for a release to be made after PR
+// #385 was merged. Once this has been done this can be removed. The newly
+// release version will be >= 22.3.3
+//
+// Ref: https://github.com/coreos/go-systemd/pull/385
+replace github.com/coreos/go-systemd/v22 => github.com/coreos/go-systemd/v22 v22.0.0-20211213101732-f5a75de5182a
+
 // Direct dependencies
 require (
 	github.com/cakturk/go-netstat v0.0.0-20200220111822-e5b49efee7a5
-	github.com/coreos/go-systemd/v22 v22.0.0-20211213101732-f5a75de5182a // Awaiting > 22.3.2
+	github.com/coreos/go-systemd/v22 v22.3.2
 	github.com/elastic/go-sysinfo v1.7.1
 	github.com/overmindtech/discovery v0.11.2
 	github.com/overmindtech/sdp-go v0.6.1
