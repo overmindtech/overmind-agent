@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path"
 	"regexp"
@@ -28,7 +29,7 @@ func sleepCMD(seconds int) string {
 func TestRun(t *testing.T) {
 	t.Run("with working comand", func(t *testing.T) {
 		params := CommandParams{
-			Command:      "hostname",
+			Command:      "cat /etc/hosts",
 			ExpectedExit: 0,
 		}
 
@@ -46,7 +47,7 @@ func TestRun(t *testing.T) {
 		var name interface{}
 		var exitCode interface{}
 		var stdout interface{}
-		var hostname string
+		var hosts []byte
 
 		name, err = item.Attributes.Get("name")
 
@@ -54,8 +55,8 @@ func TestRun(t *testing.T) {
 			t.Error(err)
 		}
 
-		if name != "hostname" {
-			t.Errorf("expected name to be \"hostname\" got %v", name)
+		if name != "cat /etc/hosts" {
+			t.Errorf("expected name to be \"cat /etc/hosts\" got %v", name)
 		}
 
 		exitCode, err = item.Attributes.Get("exitCode")
@@ -74,14 +75,16 @@ func TestRun(t *testing.T) {
 			t.Error(err)
 		}
 
-		hostname, err = os.Hostname()
+		hosts, err = ioutil.ReadFile("/etc/hosts")
 
 		if err != nil {
 			t.Error(err)
 		}
 
-		if fmt.Sprint(stdout) != hostname {
-			t.Errorf("expected stdout to be %v got %v", hostname, stdout)
+		hostsString := strings.TrimSuffix(string(hosts), "\n")
+
+		if fmt.Sprint(stdout) != hostsString {
+			t.Errorf("expected stdout to be %v got %v", hostsString, stdout)
 		}
 	})
 
