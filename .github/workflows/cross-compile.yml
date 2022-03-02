@@ -54,7 +54,7 @@ jobs:
   centos-tests:
     name: CentOS tests
     runs-on: ubuntu-latest
-    container: 'centos:latest'
+    container: 'quay.io/centos/centos:stream8'
     steps:
       - name: Install C Compiler
         run: |

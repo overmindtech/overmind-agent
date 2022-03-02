@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
@@ -27,8 +29,17 @@ func sleepCMD(seconds int) string {
 
 func TestRun(t *testing.T) {
 	t.Run("with working comand", func(t *testing.T) {
+		fileName := filepath.Join(t.TempDir(), "testfile.txt")
+		command := "cat " + fileName
+		testContent := "some content here"
+
+		// Create test file
+		if err := ioutil.WriteFile(fileName, []byte(testContent), 0600); err != nil {
+			t.Fatal(err)
+		}
+
 		params := CommandParams{
-			Command:      "hostname",
+			Command:      command,
 			ExpectedExit: 0,
 		}
 
@@ -46,7 +57,6 @@ func TestRun(t *testing.T) {
 		var name interface{}
 		var exitCode interface{}
 		var stdout interface{}
-		var hostname string
 
 		name, err = item.Attributes.Get("name")
 
@@ -54,8 +64,8 @@ func TestRun(t *testing.T) {
 			t.Error(err)
 		}
 
-		if name != "hostname" {
-			t.Errorf("expected name to be \"hostname\" got %v", name)
+		if name != command {
+			t.Errorf("expected name to be \"%v\" got %v", command, name)
 		}
 
 		exitCode, err = item.Attributes.Get("exitCode")
@@ -74,14 +84,8 @@ func TestRun(t *testing.T) {
 			t.Error(err)
 		}
 
-		hostname, err = os.Hostname()
-
-		if err != nil {
-			t.Error(err)
-		}
-
-		if fmt.Sprint(stdout) != hostname {
-			t.Errorf("expected stdout to be %v got %v", hostname, stdout)
+		if fmt.Sprint(stdout) != testContent {
+			t.Errorf("expected stdout to be %v got %v", testContent, stdout)
 		}
 	})
 
