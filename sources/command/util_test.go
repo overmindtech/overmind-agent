@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
@@ -28,8 +29,17 @@ func sleepCMD(seconds int) string {
 
 func TestRun(t *testing.T) {
 	t.Run("with working comand", func(t *testing.T) {
+		fileName := filepath.Join(t.TempDir(), "testfile.txt")
+		command := "cat " + fileName
+		testContent := "some content here"
+
+		// Create test file
+		if err := ioutil.WriteFile(fileName, []byte(testContent), 0600); err != nil {
+			t.Fatal(err)
+		}
+
 		params := CommandParams{
-			Command:      "cat /etc/hosts",
+			Command:      command,
 			ExpectedExit: 0,
 		}
 
@@ -47,7 +57,6 @@ func TestRun(t *testing.T) {
 		var name interface{}
 		var exitCode interface{}
 		var stdout interface{}
-		var hosts []byte
 
 		name, err = item.Attributes.Get("name")
 
@@ -55,8 +64,8 @@ func TestRun(t *testing.T) {
 			t.Error(err)
 		}
 
-		if name != "cat /etc/hosts" {
-			t.Errorf("expected name to be \"cat /etc/hosts\" got %v", name)
+		if name != command {
+			t.Errorf("expected name to be \"%v\" got %v", command, name)
 		}
 
 		exitCode, err = item.Attributes.Get("exitCode")
@@ -75,16 +84,8 @@ func TestRun(t *testing.T) {
 			t.Error(err)
 		}
 
-		hosts, err = ioutil.ReadFile("/etc/hosts")
-
-		if err != nil {
-			t.Error(err)
-		}
-
-		hostsString := strings.TrimSuffix(string(hosts), "\n")
-
-		if fmt.Sprint(stdout) != hostsString {
-			t.Errorf("expected stdout to be %v got %v", hostsString, stdout)
+		if fmt.Sprint(stdout) != testContent {
+			t.Errorf("expected stdout to be %v got %v", testContent, stdout)
 		}
 	})
 
