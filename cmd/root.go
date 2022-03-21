@@ -33,9 +33,10 @@ Edit this once you have created your source
 		// Get srcman supplied config
 		natsServers := viper.GetStringSlice("nats-servers")
 		natsNamePrefix := "agent"
-		natsCAFile := viper.GetString("nats-ca-file")
-		natsJWTFile := viper.GetString("nats-jwt-file")
-		natsNKeyFile := viper.GetString("nats-nkey-file")
+		clientID := viper.GetString("client-id")
+		clientSecret := viper.GetString("client-secret")
+		overmindAuthURL := viper.GetString("overmind-auth-url")
+		overmindTokenAPI := viper.GetString("overmind-token-api")
 		maxParallel := viper.GetInt("max-parallel")
 		hostname, err := os.Hostname()
 
@@ -47,16 +48,20 @@ Edit this once you have created your source
 			os.Exit(1)
 		}
 
-		// ⚠️ Your custom configration goes here
-		// yourCustomFlag := viper.GetString("your-custom-flag")
+		var clientSecretLog string
+
+		if clientSecret != "" {
+			clientSecretLog = "[REDACTED]"
+		}
 
 		log.WithFields(log.Fields{
-			"nats-servers":     natsServers,
-			"nats-name-prefix": natsNamePrefix,
-			"nats-ca-file":     natsCAFile,
-			"nats-jwt-file":    natsJWTFile,
-			"nats-nkey-file":   natsNKeyFile,
-			"max-parallel":     maxParallel,
+			"nats-servers":       natsServers,
+			"nats-name-prefix":   natsNamePrefix,
+			"max-parallel":       maxParallel,
+			"client-id":          clientID,
+			"client-secret":      clientSecretLog,
+			"overmind-auth-url":  overmindAuthURL,
+			"overmind-token-api": overmindTokenAPI,
 		}).Info("Got config")
 
 		e := discovery.Engine{
@@ -68,11 +73,29 @@ Edit this once you have created your source
 				MaxReconnect:    5,                  // TODO: Make configurable
 				ReconnectWait:   time.Second,        // TODO: Make configurable
 				ReconnectJitter: 3 * time.Second,    // TODO: Make configurable
-				CAFile:          natsCAFile,
-				NkeyFile:        natsNKeyFile,
-				JWTFile:         natsJWTFile,
 			},
 			MaxParallelExecutions: maxParallel,
+		}
+
+		if clientID != "" && clientSecret != "" {
+			log.WithFields(log.Fields{
+				"client-id":          clientID,
+				"client-secret":      clientSecretLog,
+				"overmind-auth-url":  overmindAuthURL,
+				"overmind-token-api": overmindTokenAPI,
+			}).Info("Setting up authentication client")
+
+			// Create a new token client to be used for NATS Auth. This with
+			// authenticate to OAuth, then get a NATS-specific token from the
+			// overmindTokenAPI
+			oauthClient := discovery.NewOAuthTokenClient(
+				clientID,
+				clientSecret,
+				overmindAuthURL,
+				overmindTokenAPI,
+			)
+
+			e.NATSOptions.TokenClient = oauthClient
 		}
 
 		// ⚠️ Here is where you add your sources
@@ -139,14 +162,14 @@ func init() {
 	// need to change these
 	rootCmd.PersistentFlags().StringArray("nats-servers", []string{"nats://localhost:4222", "nats://nats:4222"}, "A list of NATS servers to connect to")
 	rootCmd.PersistentFlags().String("nats-name-prefix", "", "A name label prefix. Sources should append a dot and their hostname .{hostname} to this, then set this is the NATS connection name which will be sent to the server on CONNECT to identify the client")
-	rootCmd.PersistentFlags().String("nats-ca-file", "", "Path to the CA file that NATS should use when connecting over TLS")
-	rootCmd.PersistentFlags().String("nats-jwt-file", "", "Path to the file containing the user JWT")
-	rootCmd.PersistentFlags().String("nats-nkey-file", "", "Path to the file containing the NKey seed")
 	rootCmd.PersistentFlags().Int("max-parallel", (runtime.NumCPU() * 2), "Max number of requests to run in parallel")
 
 	// ⚠️ Add your own custom config options below, the example "your-custom-flag"
 	// should be replaced with your own config or deleted
-	// rootCmd.PersistentFlags().String("your-custom-flag", "someDefaultValue.conf", "Description of what your option is meant to do")
+	rootCmd.PersistentFlags().String("client-id", "", "The client ID that will be used for authenticating with Overmind. Must be used in conjunction with --client-secret")
+	rootCmd.PersistentFlags().String("client-secret", "", "Client secret associated with the supplied --client-id. Used to authenticate with Overmind")
+	rootCmd.PersistentFlags().String("overmind-auth-url", "https://app.overmind.tech/todo/fix/this", "The URL to send Overmind authentication requests to")
+	rootCmd.PersistentFlags().String("overmind-token-api", "https://app.overmind.tech/todo/v1", "The root URL of the overmind token API which is used to obtain NATS tokens")
 
 	// Bind these to viper
 	viper.BindPFlags(rootCmd.PersistentFlags())

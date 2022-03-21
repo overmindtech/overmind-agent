@@ -1,4 +1,4 @@
-# overmind Agent
+# Overmind Agent
 
 Agent code for overmind.
 
@@ -506,19 +506,17 @@ Returns details about files. Does not support `Find()` as this would involve sea
 
 All configuration options can be provided via the command line or as environment variables:
 
-| Environment Variable | CLI Flag | Automatic | Description |
-|----------------------|----------|-----------|-------------|
-| `CONFIG`| `--config` | ✅ | Config file location. Can be used instead of the CLI or environment variables if needed |
-| `LOG`| `--log` | ✅ | Set the log level. Valid values: panic, fatal, error, warn, info, debug, trace |
-| `NATS_SERVERS`| `--nats-servers` | ✅ | A list of NATS servers to connect to |
-| `NATS_NAME_PREFIX`| `--nats-name-prefix` | ✅ | A name label prefix. Sources should append a dot and their hostname .{hostname} to this, then set this is the NATS connection name which will be sent to the server on CONNECT to identify the client |
-| `NATS_CA_FILE`| `--nats-ca-file` | ✅ | Path to the CA file that NATS should use when connecting over TLS |
-| `NATS_JWT_FILE`| `--nats-jwt-file` | ✅ | Path to the file containing the user JWT |
-| `NATS_NKEY_FILE`| `--nats-nkey-file` | ✅ | Path to the file containing the NKey seed |
-| `MAX-PARALLEL`| `--max-parallel` | ✅ | Max number of requests to run in parallel |
-| `YOUR_CUSTOM_FLAG`| `--your-custom-flag` |   | Configuration that you add should be documented here |
-
-Config can also be provided as a config f
+| Environment Variable | CLI Flag | Description |
+|----------------------|----------|-------------|
+| `CONFIG`| `--config`| Config file location. Can be used instead of the CLI or environment variables if needed |
+| `LOG`| `--log`| Set the log level. Valid values: panic, fatal, error, warn, info, debug, trace |
+| `NATS_SERVERS`| `--nats-servers`| A list of NATS servers to connect to |
+| `NATS_NAME_PREFIX`| `--nats-name-prefix`| A name label prefix. Sources should append a dot and their hostname .{hostname} to this, then set this is the NATS connection name which will be sent to the server on CONNECT to identify the client |
+| `CLIENT_ID` | `--client-id` | The client ID that will be used for authenticating with Overmind. Must be used in conjunction with `--client-secret` |
+| `CLIENT_SECRET` | `--client-secret` | Client secret associated with the supplied `--client-id`. Used to authenticate with Overmind. |
+| `OVERMIND_AUTH_URL` | `--overmind-auth-url` | The URL to send Overmind authentication requests to |
+| `OVERMIND_TOKEN_API` | `--overmind-token-api` | The root URL of the overmind token API which is used to obtain NATS tokens |
+| `MAX_PARALLEL`| `--max-parallel`| Max number of requests to run in parallel |
 
 ## Developing
 
