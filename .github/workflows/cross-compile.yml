@@ -14,15 +14,11 @@ jobs:
   darwin-tests:
     name: Darwin tests
     runs-on: macos-latest
-    strategy:
-      matrix:
-        # Go only supports 2x revisions at once
-        go-version: [1.17.x, 1.18.x]
     steps:
       - name: Set up Go 1.x
         uses: actions/setup-go@v2
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version: 1.18.x
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
@@ -37,15 +33,11 @@ jobs:
   ubuntu-tests:
     name: Ubuntu tests
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        # Go only supports 2x revisions at once
-        go-version: [1.17.x, 1.18.x]
     steps:
       - name: Set up Go 1.x
         uses: actions/setup-go@v2
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version: 1.18.x
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
@@ -63,10 +55,6 @@ jobs:
     name: CentOS tests
     runs-on: ubuntu-latest
     container: 'quay.io/centos/centos:stream8'
-    strategy:
-      matrix:
-        # Go only supports 2x revisions at once
-        go-version: [1.17.x, 1.18.x]
     steps:
       - name: Install C Compiler
         run: |
@@ -75,7 +63,7 @@ jobs:
       - name: Set up Go 1.x
         uses: actions/setup-go@v2
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version: 1.18.x
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
@@ -90,15 +78,11 @@ jobs:
   windows-tests:
     name: Windows tests
     runs-on: windows-latest
-    strategy:
-      matrix:
-        # Go only supports 2x revisions at once
-        go-version: [1.17.x, 1.18.x]
     steps:
       - name: Set up Go 1.x
         uses: actions/setup-go@v2
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version: 1.18.x
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
