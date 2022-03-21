@@ -53,6 +53,7 @@ func (bc *FileSource) Get(ctx context.Context, itemContext string, query string)
 	var file *os.File
 	var typ string
 	var info os.FileInfo
+	var sys any
 	var stat *syscall.Stat_t
 	var uid uint32
 	var owner string
@@ -84,7 +85,17 @@ func (bc *FileSource) Get(ctx context.Context, itemContext string, query string)
 		}
 	}
 
-	stat = info.Sys().(*syscall.Stat_t)
+	sys = info.Sys()
+
+	if sys == nil {
+		return &sdp.Item{}, &sdp.ItemRequestError{
+			ErrorType:   sdp.ItemRequestError_OTHER,
+			ErrorString: fmt.Sprintf("could not access underlying syscall.Stat_t values for file %v", file.Name()),
+			Context:     util.LocalContext,
+		}
+	}
+
+	stat = sys.(*syscall.Stat_t)
 
 	// Pull all the info that we can from stat
 	uid = uint32(stat.Uid)
