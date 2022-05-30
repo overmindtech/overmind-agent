@@ -11,6 +11,7 @@ import (
 
 	"github.com/mitchellh/go-homedir"
 	"github.com/overmindtech/discovery"
+	"github.com/overmindtech/multiconn"
 	"github.com/overmindtech/overmind-agent/sources"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -38,6 +39,7 @@ Edit this once you have created your source
 		overmindAuthURL := viper.GetString("overmind-auth-url")
 		overmindTokenAPI := viper.GetString("overmind-token-api")
 		maxParallel := viper.GetInt("max-parallel")
+		startConnectRetries := viper.GetInt("start-connect-retries")
 		hostname, err := os.Hostname()
 
 		if err != nil {
@@ -55,24 +57,29 @@ Edit this once you have created your source
 		}
 
 		log.WithFields(log.Fields{
-			"nats-servers":       natsServers,
-			"nats-name-prefix":   natsNamePrefix,
-			"max-parallel":       maxParallel,
-			"client-id":          clientID,
-			"client-secret":      clientSecretLog,
-			"overmind-auth-url":  overmindAuthURL,
-			"overmind-token-api": overmindTokenAPI,
+			"nats-servers":          natsServers,
+			"nats-name-prefix":      natsNamePrefix,
+			"max-parallel":          maxParallel,
+			"client-id":             clientID,
+			"client-secret":         clientSecretLog,
+			"overmind-auth-url":     overmindAuthURL,
+			"start-connect-retries": startConnectRetries,
+			"overmind-token-api":    overmindTokenAPI,
 		}).Info("Got config")
 
 		e := discovery.Engine{
 			Name: "overmind-agent",
-			NATSOptions: &discovery.NATSOptions{
-				URLs:            natsServers,
-				ConnectionName:  fmt.Sprintf("%v.%v", natsNamePrefix, hostname),
-				ConnectTimeout:  (10 * time.Second), // TODO: Make configurable
-				MaxReconnect:    5,                  // TODO: Make configurable
-				ReconnectWait:   time.Second,        // TODO: Make configurable
-				ReconnectJitter: 3 * time.Second,    // TODO: Make configurable
+			NATSOptions: &multiconn.NATSConnectionOptions{
+				CommonOptions: multiconn.CommonOptions{
+					NumRetries: startConnectRetries,
+					RetryDelay: 5 * time.Second,
+				},
+				Servers:           natsServers,
+				ConnectionName:    fmt.Sprintf("%v.%v", natsNamePrefix, hostname),
+				ConnectionTimeout: (10 * time.Second), // TODO: Make configurable
+				MaxReconnects:     30,                 // TODO: Make configurable
+				ReconnectWait:     time.Second,        // TODO: Make configurable
+				ReconnectJitter:   3 * time.Second,    // TODO: Make configurable
 			},
 			MaxParallelExecutions: maxParallel,
 		}
@@ -88,7 +95,7 @@ Edit this once you have created your source
 			// Create a new token client to be used for NATS Auth. This with
 			// authenticate to OAuth, then get a NATS-specific token from the
 			// overmindTokenAPI
-			oauthClient := discovery.NewOAuthTokenClient(
+			oauthClient := multiconn.NewOAuthTokenClient(
 				clientID,
 				clientSecret,
 				overmindAuthURL,
@@ -157,6 +164,7 @@ func init() {
 	// General config options
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", fmt.Sprintf("%v/.overmind.yaml", home), "config file path")
 	rootCmd.PersistentFlags().StringVar(&logLevel, "log", "info", "Set the log level. Valid values: panic, fatal, error, warn, info, debug, trace")
+	rootCmd.PersistentFlags().IntP("start-connect-retries", "r", 10, "How many time to try connecting on startup before giving up, set to -1 for infinite")
 
 	// Config required by all sources in order to connect to NATS. You shouldn't
 	// need to change these
