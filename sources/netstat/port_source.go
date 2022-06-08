@@ -5,6 +5,7 @@ package netstat
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"runtime"
@@ -59,7 +60,6 @@ func (s *PortSource) Get(ctx context.Context, itemContext string, query string) 
 	var sockets4 []ns.SockTabEntry
 	var sockets6 []ns.SockTabEntry
 	var sockets []ns.SockTabEntry
-	var socket ns.SockTabEntry
 	var port int
 
 	port, err = strconv.Atoi(query)
@@ -78,23 +78,8 @@ func (s *PortSource) Get(ctx context.Context, itemContext string, query string) 
 			ErrorType:   sdp.ItemRequestError_NOTFOUND,
 			ErrorString: fmt.Sprintf("Port %v not found", query),
 		}
-	case 1:
-		socket = sockets[0]
-		return socketToItem(socket)
 	default:
-		// If more than one was found then we need to narrow it down to one. Thi
-		// is possible because there might be many established connections on a
-		// single port. In this case I'm going to return the first one that is
-		// listening. If this was the search method then I would probably return
-		// everything
-		for _, sock := range sockets {
-			if sock.State.String() == "LISTEN" {
-				return socketToItem(sock)
-			}
-		}
-
-		// If none are listening then fail
-		return nil, fmt.Errorf("found many sockets on port %v, none listening. Get() expects to be able to find a listening port, if you want more results use Search()", query)
+		return socketsToItem(sockets...)
 	}
 }
 
@@ -108,44 +93,69 @@ func (s *PortSource) Find(ctx context.Context, itemContext string) ([]*sdp.Item,
 		}
 	}
 
-	var sockets []ns.SockTabEntry
 	var items []*sdp.Item
+	var errString string
 	var err error
 
-	sockets, err = ns.TCPSocks(acceptListening)
+	ipv4Sockets, ipv4Err := ns.TCPSocks(acceptListening)
 
-	if len(sockets) == 0 || err != nil {
-		return make([]*sdp.Item, 0), err
+	if ipv4Err != nil {
+		errString = fmt.Sprintf("error getting ipv4 sockets: %v ", ipv4Err)
 	}
 
-	for _, socket := range sockets {
-		item, err := socketToItem(socket)
+	ipv6Sockets, ipv6Err := ns.TCP6Socks(acceptListening)
 
-		if err == nil {
-			items = append(items, item)
-		} else {
-			return items, err
+	if ipv6Err != nil {
+		errString = errString + fmt.Sprintf("error getting ipv6 sockets: %v", ipv6Err)
+	}
+
+	if errString != "" {
+		err = errors.New(errString)
+	}
+
+	allSockets := append(ipv4Sockets, ipv6Sockets...)
+	socketMap := make(map[uint16][]ns.SockTabEntry)
+
+	for _, socket := range allSockets {
+		if socket.LocalAddr != nil {
+			socketMap[socket.LocalAddr.Port] = append(socketMap[socket.LocalAddr.Port], socket)
 		}
 	}
 
-	return items, nil
+	for _, sockets := range socketMap {
+		item, err := socketsToItem(sockets...)
+
+		if err == nil {
+			items = append(items, item)
+		}
+	}
+
+	return items, err
 }
 
 func acceptListening(s *ns.SockTabEntry) bool {
 	return s.State.String() == "LISTEN"
 }
 
+// acceptNumber Accepts a given port nuymber that is also listening
 func acceptNumber(p uint16) func(*ns.SockTabEntry) bool {
 	return func(n *ns.SockTabEntry) bool {
-		return n.LocalAddr.Port == p
+		return n.LocalAddr.Port == p && acceptListening(n)
 	}
 }
 
-func socketToItem(s ns.SockTabEntry) (*sdp.Item, error) {
+// socketsToItem Will merge details of sockets into a single item, this assumes
+// that all sockets already have the same state and port and will simply merge
+// the local and remote addresses
+func socketsToItem(s ...ns.SockTabEntry) (*sdp.Item, error) {
 	var err error
 	var item sdp.Item
 
 	attributes := make(map[string]interface{})
+
+	if len(s) == 0 {
+		return nil, errors.New("no sockets provided")
+	}
 
 	// Prepare the item
 	item = sdp.Item{}
@@ -154,61 +164,60 @@ func socketToItem(s ns.SockTabEntry) (*sdp.Item, error) {
 	item.Context = util.LocalContext
 	item.LinkedItemRequests = make([]*sdp.ItemRequest, 0)
 
-	attributes["state"] = s.State.String()
+	// Get most of the details from the first socket since they should be the same
+	attributes["state"] = s[0].State.String()
+	attributes["port"] = uint32(s[0].LocalAddr.Port)
+	localIPs := make([]string, 0)
 
-	// Protect against nil pointer dereference
-	if s.LocalAddr != nil {
-		attributes["port"] = uint32(s.LocalAddr.Port)
-		attributes["localIP"] = s.LocalAddr.IP.String()
-
-		// If the IP is unspecified (0.0.0.0 or ::) it means that the port will
-		// be listening on all IPs, therefore we need to do some expansion
-		if s.LocalAddr.IP.IsUnspecified() {
-			unicastAddresses, err := net.InterfaceAddrs()
-
-			if err == nil {
-				for _, address := range unicastAddresses {
-					// Extract just the IP address
-					if ipNet, ok := address.(*net.IPNet); ok {
-						item.LinkedItemRequests = append(item.LinkedItemRequests, &sdp.ItemRequest{
-							Context: "global",
-							Method:  sdp.RequestMethod_GET,
-							Query:   net.JoinHostPort(ipNet.IP.String(), fmt.Sprint(s.LocalAddr.Port)),
-							Type:    "networksocket",
-						})
-					}
-				}
-			}
-		} else {
-			item.LinkedItemRequests = append(item.LinkedItemRequests, &sdp.ItemRequest{
-				Context: "global",
-				Method:  sdp.RequestMethod_GET,
-				Query:   net.JoinHostPort(s.LocalAddr.IP.String(), fmt.Sprint(s.LocalAddr.Port)),
-				Type:    "networksocket",
-			})
-		}
-	} else {
-		// I'm pretty sure if there is no local address then the socker isn't a port so we should fail
-		return nil, fmt.Errorf("socket with UID %v does not have an associated localAddress. Cannot determine port", s.UID)
-	}
-
-	if s.Process != nil {
-		attributes["pid"] = s.Process.Pid
+	if s[0].Process != nil {
+		attributes["pid"] = s[0].Process.Pid
 
 		item.LinkedItemRequests = append(item.LinkedItemRequests, &sdp.ItemRequest{
 			Method:  sdp.RequestMethod_GET,
-			Query:   strconv.Itoa(s.Process.Pid),
+			Query:   strconv.Itoa(s[0].Process.Pid),
 			Type:    "process",
 			Context: util.LocalContext,
 		})
 	}
 
-	if s.RemoteAddr != nil {
-		if s.RemoteAddr.Port != 0 {
-			attributes["remoteIP"] = s.RemoteAddr.IP.String()
-			attributes["remotePort"] = s.RemoteAddr.Port
+	// Merge the IPs and anything else that might be different
+	for _, socket := range s {
+		if socket.LocalAddr != nil {
+			localIPs = append(localIPs, socket.LocalAddr.IP.String())
+
+			// If the IP is unspecified (0.0.0.0 or ::) it means that the port will
+			// be listening on all IPs, therefore we need to do some expansion
+			if socket.LocalAddr.IP.IsUnspecified() {
+				unicastAddresses, err := net.InterfaceAddrs()
+
+				if err == nil {
+					for _, address := range unicastAddresses {
+						// Extract just the IP address
+						if ipNet, ok := address.(*net.IPNet); ok {
+							item.LinkedItemRequests = append(item.LinkedItemRequests, &sdp.ItemRequest{
+								Context: "global",
+								Method:  sdp.RequestMethod_GET,
+								Query:   net.JoinHostPort(ipNet.IP.String(), fmt.Sprint(socket.LocalAddr.Port)),
+								Type:    "networksocket",
+							})
+						}
+					}
+				}
+			} else {
+				item.LinkedItemRequests = append(item.LinkedItemRequests, &sdp.ItemRequest{
+					Context: "global",
+					Method:  sdp.RequestMethod_GET,
+					Query:   net.JoinHostPort(socket.LocalAddr.IP.String(), fmt.Sprint(socket.LocalAddr.Port)),
+					Type:    "networksocket",
+				})
+			}
+		} else {
+			return nil, fmt.Errorf("socket with UID %v does not have an associated localAddress. Cannot determine port", socket.UID)
 		}
+
 	}
+
+	attributes["localIPs"] = localIPs
 
 	item.Attributes, err = sdp.ToAttributes(attributes)
 
