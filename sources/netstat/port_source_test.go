@@ -94,3 +94,40 @@ func TestPortGetSocketLinks(t *testing.T) {
 		}
 	}
 }
+
+func TestPortFind(t *testing.T) {
+	var testPort string
+	var err error
+
+	// Listen for incoming connections on a random port
+	l, err := net.Listen("tcp", "0.0.0.0:0")
+
+	if err != nil {
+		t.Errorf("Error listening: %v", err.Error())
+	}
+
+	// Close the listener when the application closes.
+	defer l.Close()
+
+	_, testPort, _ = net.SplitHostPort(l.Addr().String())
+
+	src := PortSource{}
+
+	items, err := src.Find(context.Background(), util.LocalContext)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	var found bool
+
+	for _, item := range items {
+		if item.UniqueAttributeValue() == testPort {
+			found = true
+		}
+	}
+
+	if !found {
+		t.Errorf("couldn't find port %v", testPort)
+	}
+}
