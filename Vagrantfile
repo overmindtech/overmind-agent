@@ -42,14 +42,14 @@ Vagrant.configure("2") do |config|
     source $HOME/.bash_profile
 
     # Install the debugger
-    go get -u github.com/go-delve/delve/cmd/dlv
+    go install github.com/go-delve/delve/cmd/dlv@latest
 
     # Set up symlinks
     mkdir -p /root/go/src/github.com/overmindtech
     ln -s /vagrant /root/go/src/github.com/overmindtech/overmind-agent
 
     # Install dependencies
-    cd /root/go/src/github.com/overmindtech/overmind-agent
+    cd /vagrant
     go get -v -t -d ./...
     cd -
 
