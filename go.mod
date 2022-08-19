@@ -1,6 +1,6 @@
 module github.com/overmindtech/overmind-agent
 
-go 1.18
+go 1.19
 
 // This is required as we are still waiting for a release to be made after PR
 // #385 was merged. Once this has been done this can be removed. The newly
