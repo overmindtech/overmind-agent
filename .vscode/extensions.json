@@ -4,11 +4,10 @@
 
 	// List of extensions which should be recommended for users of this workspace.
 	"recommendations": [
-		"github.codespaces",
-		"ms-vscode-remote.remote-ssh"
+		"ms-vscode-remote.remote-containers",
 	],
 	// List of extensions recommended by VS Code that should not be recommended for users of this workspace.
 	"unwantedRecommendations": [
-		
+
 	]
 }

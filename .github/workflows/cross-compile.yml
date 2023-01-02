@@ -16,12 +16,12 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Set up Go 1.x
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: 1.x
 
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Get dependencies
         run: |
@@ -35,12 +35,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go 1.x
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: 1.x
 
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Get dependencies
         run: |
@@ -61,12 +61,12 @@ jobs:
           yum group install "Development Tools" -y
 
       - name: Set up Go 1.x
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: 1.x
 
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Get dependencies
         run: |
@@ -80,12 +80,12 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Set up Go 1.x
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: 1.x
 
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Get dependencies
         run: |
@@ -131,7 +131,7 @@ jobs:
         go-version: 1.x
 
     - name: Check out code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         path: '.'
 
@@ -163,7 +163,7 @@ jobs:
         echo "::set-output name=goarch::$GOARCH"
       shell: bash
       id: go_env
-    
+
     - name: Setup Go environment
       env:
         REPO_NAME: ${{ github.repository }}
@@ -173,17 +173,17 @@ jobs:
         export PROJECT_NAME=$(echo $REPO_NAME | cut -f2 -d/)
         export PROJECT_PARENT="$GOPATH/src/github.com/$USER_NAME"
         export PROJECT_DIR=$PROJECT_PARENT/$PROJECT_NAME
-        
+
         # Create the source location
         echo "Creating project dir $PROJECT_PARENT"
         mkdir -p $PROJECT_PARENT
-        
+
         # Link our code in there
         ln -s $GITHUB_WORKSPACE $PROJECT_DIR
 
         echo "$PROJECT_PARENT contents:"
         ls -la $PROJECT_PARENT
-        
+
         echo "::set-output name=project_dir::$PROJECT_DIR"
       shell: bash
       id: setup
