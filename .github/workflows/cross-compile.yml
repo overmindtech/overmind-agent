@@ -215,7 +215,7 @@ jobs:
       run: go build -v .
 
     - name: Save artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: overmind-agent-${{ steps.go_env.outputs.goos }}-${{ steps.go_env.outputs.goarch }}
         path: |
