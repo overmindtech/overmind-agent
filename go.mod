@@ -13,7 +13,7 @@ replace github.com/coreos/go-systemd/v22 => github.com/coreos/go-systemd/v22 v22
 require (
 	github.com/cakturk/go-netstat v0.0.0-20200220111822-e5b49efee7a5
 	github.com/coreos/go-systemd/v22 v22.3.2
-	github.com/elastic/go-sysinfo v1.8.1
+	github.com/elastic/go-sysinfo v1.9.0
 	github.com/overmindtech/discovery v0.13.1
 	github.com/overmindtech/multiconn v0.3.4
 	github.com/overmindtech/sdp-go v0.13.2
