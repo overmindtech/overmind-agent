@@ -230,7 +230,7 @@ jobs:
       - build
     steps:
       # Downloads all artifacts
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
       # Zip them up
       - name: Zip Artifacts
         run: 'for i in */; do zip -r "${i%/}.zip" "$i"; done'
