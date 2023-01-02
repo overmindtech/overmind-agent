@@ -19,7 +19,7 @@ require (
 	github.com/overmindtech/sdp-go v0.13.2
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/sirupsen/logrus v1.9.0
-	github.com/spf13/cobra v1.5.0
+	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.14.0
 	gopkg.in/yaml.v2 v2.4.0
