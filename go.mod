@@ -16,7 +16,7 @@ require (
 	github.com/elastic/go-sysinfo v1.9.0
 	github.com/overmindtech/discovery v0.13.1
 	github.com/overmindtech/multiconn v0.3.4
-	github.com/overmindtech/sdp-go v0.13.2
+	github.com/overmindtech/sdp-go v0.14.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.6.1

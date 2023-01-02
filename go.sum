@@ -184,8 +184,8 @@ github.com/overmindtech/discovery v0.13.1 h1:l89WGJp3Psh4mnx31WbWedpUB+Oi0k9cyRj
 github.com/overmindtech/discovery v0.13.1/go.mod h1:wi6FDABUuEIqTXNrscII9GF9aU9AzRiUW46yQdvk4zs=
 github.com/overmindtech/multiconn v0.3.4 h1:OXW62WCOb7YSoCaAEKUy/f5N+rJ2jTc81bJOtH52+o8=
 github.com/overmindtech/multiconn v0.3.4/go.mod h1:1ctCvpKrQy1qf0rQhrOvq5h92CaGN7L9ndWLm68H3X8=
-github.com/overmindtech/sdp-go v0.13.2 h1:isVk8BcZxEQJ/7v30C/O8JufIgEta3hxXc1jwys7IZU=
-github.com/overmindtech/sdp-go v0.13.2/go.mod h1:9SFx+Se5hgWxQviaR6f/0MgFO0xBLbqOyfunqqks7T4=
+github.com/overmindtech/sdp-go v0.14.0 h1:YP4Qg+PPciPxVGjgs1YhhACkHPeqNFxuTFFBf5h+NK0=
+github.com/overmindtech/sdp-go v0.14.0/go.mod h1:9SFx+Se5hgWxQviaR6f/0MgFO0xBLbqOyfunqqks7T4=
 github.com/overmindtech/sdpcache v0.3.2 h1:0godJzpEH1QfNOO54ii14xH2LMn4mjHpiANRmqayEM4=
 github.com/overmindtech/sdpcache v0.3.2/go.mod h1:l937jFOK86yO37R9SdtpDbz0m3Uf8tEIiLWCXq690J8=
 github.com/overmindtech/tokenx-client v0.3.0 h1:gdV85d6nscLau9wl0ZM7KY5QoF+0qrYXm/VTJmR4d2k=
